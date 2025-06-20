@@ -2,6 +2,7 @@ import 'package:babyhub/core/models/cart_item.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:babyhub/core/providers/cart_provider.dart';
+import 'package:go_router/go_router.dart';
 // import 'package:intl/intl.dart';
 
 class CartScreen extends ConsumerWidget {
@@ -21,7 +22,7 @@ class CartScreen extends ConsumerWidget {
           elevation: 0,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () => Navigator.pop(context),
+            onPressed: () { context.push('/checkout');},
           ),
           title: const Text(
             "Cart",

@@ -2,6 +2,7 @@ import 'package:babyhub/core/models/cart_item.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:babyhub/core/providers/cart_provider.dart';
+import 'package:go_router/go_router.dart';
 
 class CheckoutScreen extends ConsumerStatefulWidget {
   const CheckoutScreen({super.key});
@@ -316,6 +317,6 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       ),
     );
     ref.read(cartProvider.notifier).clearCart();
-    Navigator.pop(context);
+    context.pop();
   }
 }
