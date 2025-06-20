@@ -1,7 +1,7 @@
+import 'package:babyhub/core/models/cart_item.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:babyhub/core/providers/cart_provider.dart';
-import 'package:intl/intl.dart';
 
 class CheckoutScreen extends ConsumerStatefulWidget {
   const CheckoutScreen({super.key});
@@ -123,7 +123,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
           width: 40,
           height: 40,
           decoration: BoxDecoration(
-            color: Colors.green.withOpacity(0.2),
+            color: Colors.green.withValues(alpha: 0.2),
             shape: BoxShape.circle,
           ),
           child: Icon(icon, color: Colors.green, size: 20),
@@ -158,7 +158,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     );
   }
 
-  Widget _buildOrderSummary(List<cartItem> cartItems, cartNotifier) {
+  Widget _buildOrderSummary(List<CartItem> cartItems, cartNotifier) {
     final subtotal = cartNotifier.totalPrice;
     final discount = 4.0;
     final delivery = 2.0;

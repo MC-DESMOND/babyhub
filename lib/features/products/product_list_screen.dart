@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:babyhub/core/providers/product_provider.dart';
 import 'package:babyhub/features/products/product_card.dart';
+import 'package:babyhub/core/models/product.dart';
 
 class ProductHistoryScreen extends ConsumerStatefulWidget {
   const ProductHistoryScreen({super.key});

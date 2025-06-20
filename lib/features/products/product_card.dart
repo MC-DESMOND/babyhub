@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:babyhub/core/models/product.dart';
-import 'package:intl/intl.dart';
 
 class ProductCard extends StatelessWidget {
   final Product product;

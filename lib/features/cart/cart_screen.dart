@@ -1,7 +1,8 @@
+import 'package:babyhub/core/models/cart_item.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:babyhub/core/providers/cart_provider.dart';
-import 'package:intl/intl.dart';
+// import 'package:intl/intl.dart';
 
 class CartScreen extends ConsumerWidget {
   const CartScreen({super.key});
@@ -23,7 +24,7 @@ class CartScreen extends ConsumerWidget {
             onPressed: () => Navigator.pop(context),
           ),
           title: const Text(
-            "Chart",
+            "Cart",
             style: TextStyle(color: Colors.grey, fontSize: 16),
           ),
           centerTitle: true,
@@ -104,7 +105,7 @@ class CartScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildCartItem(cartItem item, cartNotifier) {
+  Widget _buildCartItem(CartItem item, cartNotifier) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       child: Row(
