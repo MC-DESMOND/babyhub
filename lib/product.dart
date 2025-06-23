@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'routes.dart';
+// No direct API service needed here if products are passed in
 
 class ProductPage extends StatefulWidget {
-  final List<Map<String, dynamic>> products;
+  final List<Map<String, dynamic>> products; // Now expects data from HomePage
   final String? searchQuery;
 
   const ProductPage({
@@ -17,81 +18,8 @@ class ProductPage extends StatefulWidget {
 }
 
 class _ProductPageState extends State<ProductPage> {
-  // Sample data matching the image
-  List<Map<String, dynamic>> productData = [
-    {
-      "id": 1,
-      "name": "Nintendo Pro",
-      "image": "Icons/controller.svg",
-      "price": 310,
-      "sales": "1200 Sales",
-      "rating": "4.5 Ratings",
-      "isFavorite": false
-    },
-    {
-      "id": 2,
-      "name": "Deaf Cods",
-      "image": "Icons/controller.svg",
-      "price": 120,
-      "sales": "2400 Sales",
-      "rating": "4.5 Ratings",
-      "isFavorite": false
-    },
-    {
-      "id": 3,
-      "name": "Deaf Cods",
-      "image": "Icons/controller.svg",
-      "price": 120,
-      "sales": "2400 Sales",
-      "rating": "4.5 Ratings",
-      "isFavorite": false
-    },
-    {
-      "id": 4,
-      "name": "Deaf Cods",
-      "image": "Icons/controller.svg",
-      "price": 120,
-      "sales": "2400 Sales",
-      "rating": "4.5 Ratings",
-      "isFavorite": false
-    },
-    {
-      "id": 5,
-      "name": "Deaf Cods",
-      "image": "Icons/controller.svg",
-      "price": 120,
-      "sales": "2400 Sales",
-      "rating": "4.5 Ratings",
-      "isFavorite": false
-    },
-    {
-      "id": 6,
-      "name": "Deaf Cods",
-      "image": "Icons/controller.svg",
-      "price": 120,
-      "sales": "2400 Sales",
-      "rating": "4.5 Ratings",
-      "isFavorite": false
-    },
-    {
-      "id": 7,
-      "name": "Deaf Cods",
-      "image": "Icons/controller.svg",
-      "price": 120,
-      "sales": "2400 Sales",
-      "rating": "4.5 Ratings",
-      "isFavorite": false
-    },
-    {
-      "id": 8,
-      "name": "Nintendo Pro",
-      "image": "Icons/controller.svg",
-      "price": 310,
-      "sales": "1200 Sales",
-      "rating": "4.5 Ratings",
-      "isFavorite": false
-    },
-  ];
+  // Use widget.products directly, remove hardcoded productData
+  // List<Map<String, dynamic>> productData = [...]; // REMOVE THIS
 
   // Navigation function to details page using GoRouter
   void navigateToDetails(Map<String, dynamic> product) {
@@ -100,10 +28,10 @@ class _ProductPageState extends State<ProductPage> {
       product: {
         'name': product['name'],
         'price': product['price'].toString(),
-        'rating': product['rating'].replaceAll(' Ratings', ''),
-        'sales': product['sales'].replaceAll(' Sales', ''),
-        'stock': '48', // Default stock value
-        'description': 'A sleek black joystick with neon accents and a comfortable grip for precise gaming control...',
+        'rating': product['rating'].replaceAll(' Ratings', ''), // Remove " Ratings" for consistency
+        'sales': product['sales'].replaceAll(' Sales', ''), // Remove " Sales" for consistency
+        'stock': '48', // Default stock value, not from backend yet
+        'description': 'A sleek black joystick with neon accents and a comfortable grip for precise gaming control...', // Not from backend yet
       },
     );
   }
@@ -173,6 +101,14 @@ class _ProductPageState extends State<ProductPage> {
   }
 
   Widget _buildProductsGrid() {
+    if (widget.products.isEmpty) {
+      return const Center(
+        child: Text(
+          "No products available in this category.",
+          style: TextStyle(color: Colors.white54, fontSize: 16),
+        ),
+      );
+    }
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 20),
       child: GridView.builder(
@@ -182,9 +118,9 @@ class _ProductPageState extends State<ProductPage> {
           crossAxisSpacing: 15,
           mainAxisSpacing: 20,
         ),
-        itemCount: productData.length,
+        itemCount: widget.products.length, // Use widget.products
         itemBuilder: (context, index) {
-          final product = productData[index];
+          final product = widget.products[index];
           return _buildProductCard(product);
         },
       ),
@@ -215,11 +151,10 @@ class _ProductPageState extends State<ProductPage> {
                     ),
                     child: Center(
                       child: SvgPicture.asset(
-                        product['image'],
+                        product['image'], // Use passed image path
                         width: 80,
                         height: 80,
                         fit: BoxFit.contain,
-                        // Fallback if SVG doesn't load
                         placeholderBuilder: (context) => Container(
                           width: 80,
                           height: 80,
@@ -230,7 +165,7 @@ class _ProductPageState extends State<ProductPage> {
                           child: Icon(
                             product['name'].contains('Nintendo')
                                 ? Icons.gamepad
-                                : Icons.headphones,
+                                : Icons.headphones, // Simple heuristic for placeholder icon
                             color: Colors.white54,
                             size: 40,
                           ),
@@ -294,7 +229,7 @@ class _ProductPageState extends State<ProductPage> {
                   ),
                   SizedBox(height: 4),
 
-                  // Sales and Rating
+                  // Sales and Rating (still dummy for now)
                   Text(
                     "${product['sales']} • ${product['rating']}",
                     style: TextStyle(
@@ -304,7 +239,7 @@ class _ProductPageState extends State<ProductPage> {
                   ),
                   SizedBox(height: 8),
 
-                  // Price
+                  // Price (still dummy for now)
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [

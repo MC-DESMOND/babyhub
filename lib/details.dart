@@ -13,10 +13,10 @@ class DetailsPage extends StatefulWidget {
 }
 
 class _DetailsPageState extends State<DetailsPage> {
-  bool isFavorite = false;
-  bool isAddedToCart = false;
+  bool isFavorite = false; // Local UI state
+  bool isAddedToCart = false; // Local UI state
 
-  // Reviews list with initial 3 reviews
+  // Reviews list with initial 3 reviews (still static)
   List<Map<String, dynamic>> reviews = [
     {
       'text': 'Excellent joystick company! Their products are durable, responsive, and enhance gaming experience remarkably. Highly recommend!',
@@ -65,7 +65,7 @@ class _DetailsPageState extends State<DetailsPage> {
               size: 18,
             ),
           ),
-          onPressed: () => NavigationHelper.goBack(context), // Updated to use GoRouter
+          onPressed: () => NavigationHelper.goBack(context),
         ),
         title: const Text(
           'Details',
@@ -84,7 +84,7 @@ class _DetailsPageState extends State<DetailsPage> {
           children: [
             // Product Title
             Text(
-              widget.product['name'] ?? 'Nintendo Pro',
+              widget.product['name'] ?? 'Product Name',
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 28,
@@ -105,10 +105,11 @@ class _DetailsPageState extends State<DetailsPage> {
                 children: [
                   Center(
                     child: SvgPicture.asset(
-                      'Icons/controller.svg',
+                      widget.product['image'] ?? 'Icons/controller.svg', // Use product image
                       width: 200,
                       height: 150,
                       color: Colors.grey[600],
+                      placeholderBuilder: (context) => Icon(Icons.image, color: Colors.grey[600], size: 100),
                     ),
                   ),
                   Positioned(
@@ -154,7 +155,7 @@ class _DetailsPageState extends State<DetailsPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          widget.product['name'] ?? 'Nintendo Pro',
+                          widget.product['name'] ?? 'Product Name',
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 18,
@@ -163,7 +164,7 @@ class _DetailsPageState extends State<DetailsPage> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          '${widget.product['sales'] ?? '1200'} Sales • ${widget.product['rating'] ?? '4.5'} Ratings',
+                          '${widget.product['sales'] ?? '1200'} • ${widget.product['rating'] ?? '4.5'}', // Sales and Rating are strings
                           style: TextStyle(
                             color: Colors.grey[400],
                             fontSize: 14,
@@ -173,7 +174,7 @@ class _DetailsPageState extends State<DetailsPage> {
                     ),
                   ),
                   Text(
-                    '\$${widget.product['price'] ?? '310'}',
+                    '\$${widget.product['price'] ?? '0.00'}',
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 24,
@@ -185,7 +186,7 @@ class _DetailsPageState extends State<DetailsPage> {
             ),
             const SizedBox(height: 24),
 
-            // Product Images Row
+            // Product Images Row (still hardcoded SVG, as backend only has one image field)
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: List.generate(3, (index) {
@@ -198,7 +199,7 @@ class _DetailsPageState extends State<DetailsPage> {
                   ),
                   child: Center(
                     child: SvgPicture.asset(
-                      'Icons/controller.svg',
+                      'Icons/controller.svg', // Still hardcoded for additional images
                       width: 40,
                       height: 30,
                       color: Colors.grey[600],
@@ -230,7 +231,7 @@ class _DetailsPageState extends State<DetailsPage> {
             const SizedBox(height: 12),
             Text(
               widget.product['description'] ??
-                  'A sleek black joystick with neon accents and a comfortable grip for precise gaming control...',
+                  'A sleek black joystick with neon accents and a comfortable grip for precise gaming control. This is a placeholder description as it is not fetched from the backend product entity.', // Description is hardcoded
               style: TextStyle(
                 color: Colors.grey[400],
                 fontSize: 14,
@@ -239,7 +240,7 @@ class _DetailsPageState extends State<DetailsPage> {
             ),
             const SizedBox(height: 24),
 
-            // Rating, Sales, Stock Row
+            // Rating, Sales, Stock Row (still dummy data)
             Row(
               children: [
                 _buildInfoChip('${widget.product['rating'] ?? '4.5'} Rating'),
@@ -251,7 +252,7 @@ class _DetailsPageState extends State<DetailsPage> {
             ),
             const SizedBox(height: 32),
 
-            // Review Section
+            // Review Section (still static reviews)
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -369,7 +370,7 @@ class _DetailsPageState extends State<DetailsPage> {
             ),
             const SizedBox(height: 32),
 
-            // Add to Cart Button
+            // Add to Cart Button (local state)
             SizedBox(
               width: double.infinity,
               height: 56,

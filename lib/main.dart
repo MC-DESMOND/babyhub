@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'routes.dart';
+import 'services/category_service.dart';
+import 'services/product_service.dart';
+import 'services/auth_service.dart'; // To check user login status
+import 'models/category.dart';
+import 'models/product.dart';
 
 void main() {
   runApp(MyApp());
@@ -28,126 +33,168 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  // JSON-like structure for page data
-  Map<String, dynamic> pageData = {
-    "header": {
-      "user": {
-        "name": "GoodyFx",
-        "avatar": "Icons/profile.svg",
-        "greeting": "Hello, ",
-        "subtitle": "What are you looking for?"
-      },
-      "title": "Home"
-    },
-    "search": {
-      "placeholder": "Search Product",
-      "icon": "Icons/search_icon.svg"
-    },
-    "categories": [
-      {"name": "Best Seller", "isActive": true},
-      {"name": "Earphones", "isActive": false},
-      {"name": "Charger", "isActive": false},
-      {"name": "Protection", "isActive": false}
-    ],
-    "sections": {
-      "Best Seller": [
-        {
-          "id": 1,
-          "name": "Nintendo Pro",
-          "image": "Icons/controller.svg",
-          "price": 310,
-          "sales": "1200 Sales",
-          "rating": "4.5 Ratings",
-          "isFavorite": false
-        },
-        {
-          "id": 2,
-          "name": "Deaf Cods",
-          "image": "Icons/earphones.svg",
-          "price": 120,
-          "sales": "2400 Sales",
-          "rating": "4.5 Ratings",
-          "isFavorite": false
-        }
-      ],
-      "Earphones": [
-        {
-          "id": 3,
-          "name": "AirPods Pro",
-          "image": "Icons/controller.svg",
-          "price": 250,
-          "sales": "3200 Sales",
-          "rating": "4.8 Ratings",
-          "isFavorite": false
-        }
-      ],
-      "Charger": [
-        {
-          "id": 4,
-          "name": "Fast Charger",
-          "image": "Icons/controller.svg",
-          "price": 45,
-          "sales": "1800 Sales",
-          "rating": "4.3 Ratings",
-          "isFavorite": false
-        }
-      ],
-      "Protection": [
-        {
-          "id": 5,
-          "name": "Phone Case",
-          "image": "Icons/controller.svg",
-          "price": 25,
-          "sales": "5000 Sales",
-          "rating": "4.6 Ratings",
-          "isFavorite": false
-        }
-      ]
-    }
-  };
+  // Services
+  final AuthService _authService = AuthService();
+  final CategoryService _categoryService = CategoryService();
+  final ProductService _productService = ProductService();
 
-  String selectedCategory = "Best Seller";
+  // Data
+  List<Category> _categories = [];
+  List<Product> _allProducts = []; // Stores all products fetched
+  List<Product> _displayedProducts = []; // Products for the currently selected category
+
+  String selectedCategoryName = "Best Seller"; // Default to a static "Best Seller" category initially, will update if backend provides it
   int selectedNavIndex = 0;
+  bool _isLoading = true;
+  String _errorMessage = '';
+  String _userName = 'GoodyFx'; // Default for UI, will be updated from auth
 
-  // Method to get all products from all categories
-  List<Map<String, dynamic>> getAllProducts() {
-    List<Map<String, dynamic>> allProducts = [];
-    final sections = pageData['sections'] as Map<String, dynamic>;
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
 
-    sections.forEach((category, products) {
-      for (var product in products) {
-        // Add category info to each product
-        Map<String, dynamic> productWithCategory = Map.from(product);
-        productWithCategory['category'] = category;
-        allProducts.add(productWithCategory);
-      }
+  Future<void> _loadData() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = '';
     });
 
-    return allProducts;
+    try {
+      // Check user status
+      final currentUser = await _authService.getCurrentUser();
+      if (currentUser != null) {
+        _userName = currentUser.name;
+        // Also ensure token is valid. If not, maybe navigate to login.
+      } else {
+        // If not logged in, data fetching might fail for authenticated endpoints.
+        // For this demo, we'll try to fetch anyway, but alert user.
+        print("User not logged in. Data fetching might require authentication.");
+      }
+
+      // Fetch categories
+      final fetchedCategories = await _categoryService.readAllCategories();
+      if (fetchedCategories != null && fetchedCategories.isNotEmpty) {
+        _categories = fetchedCategories;
+        // Optionally, set the first category as selected or try to find "Best Seller"
+        if (_categories.any((c) => c.name == "Best Seller")) {
+          selectedCategoryName = "Best Seller";
+        } else {
+          selectedCategoryName = _categories.first.name;
+        }
+      } else {
+        _errorMessage = 'Failed to load categories. Please ensure backend is running and you are logged in.';
+        print(_errorMessage);
+      }
+
+      // Fetch products
+      final fetchedProducts = await _productService.readAllProducts();
+      if (fetchedProducts != null && fetchedProducts.isNotEmpty) {
+        _allProducts = fetchedProducts;
+        _filterProductsByCategory(selectedCategoryName);
+      } else {
+        _errorMessage += '\nFailed to load products. Please ensure backend is running and you are logged in.';
+        print(_errorMessage);
+      }
+    } catch (e) {
+      _errorMessage = 'An error occurred: $e';
+      print(_errorMessage);
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  void _filterProductsByCategory(String categoryName) {
+    setState(() {
+      selectedCategoryName = categoryName;
+      final selectedCategoryObj = _categories.firstWhere(
+        (cat) => cat.name == categoryName,
+        orElse: () => Category(id: -1, name: "Unknown"), // Fallback
+      );
+
+      // Filter products by category ID. Backend Product entity links to Category ID.
+      _displayedProducts = _allProducts
+          .where((product) => product.category.id == selectedCategoryObj.id)
+          .toList();
+    });
+  }
+
+  List<Map<String, dynamic>> _convertProductsToMapList(List<Product> products) {
+    return products.map((p) {
+      return {
+        "id": p.id,
+        "name": p.name,
+        "image": p.image, // This is expected to be an asset path or URL
+        "price": 310.0, // Placeholder, as price is not in backend Product entity
+        "sales": "1200 Sales", // Placeholder, not in backend Product entity
+        "rating": "4.5 Ratings", // Placeholder, not in backend Product entity
+        "isFavorite": false, // Local UI state
+        "category": p.category.name, // Used for search page filtering
+      };
+    }).toList();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFF1A1A1A),
+      backgroundColor: const Color(0xFF1A1A1A),
       body: SafeArea(
-        child: Column(
-          children: [
-            // Header Section
-            _buildHeader(),
+        child: _isLoading
+            ? const Center(
+                child: CircularProgressIndicator(color: Color(0xFF00C896)),
+              )
+            : _errorMessage.isNotEmpty
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(20.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.error_outline, color: Colors.red, size: 48),
+                          SizedBox(height: 16),
+                          Text(
+                            _errorMessage,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: Colors.white70, fontSize: 16),
+                          ),
+                          SizedBox(height: 24),
+                          ElevatedButton(
+                            onPressed: _loadData,
+                            child: Text('Retry'),
+                            style: ElevatedButton.styleFrom(backgroundColor: Color(0xFF00C896)),
+                          ),
+                          SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: () {
+                              NavigationHelper.goToLogin(context);
+                            },
+                            child: Text('Go to Login'),
+                            style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                : Column(
+                    children: [
+                      // Header Section
+                      _buildHeader(),
 
-            // Search Bar
-            _buildSearchBar(),
+                      // Search Bar
+                      _buildSearchBar(),
 
-            // Category Pills
-            _buildCategoryPills(),
+                      // Category Pills
+                      _buildCategoryPills(),
 
-            // Products Section
-            Expanded(
-              child: _buildProductsSection(),
-            ),
-          ],
-        ),
+                      // Products Section
+                      Expanded(
+                        child: _buildProductsSection(),
+                      ),
+                    ],
+                  ),
       ),
       // Bottom Navigation
       bottomNavigationBar: _buildBottomNavigation(),
@@ -155,9 +202,6 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildHeader() {
-    final headerData = pageData['header'];
-    final userData = headerData['user'];
-
     return Padding(
       padding: EdgeInsets.all(20),
       child: Row(
@@ -173,9 +217,8 @@ class _HomePageState extends State<HomePage> {
             child: ClipRRect(
               borderRadius: BorderRadius.circular(25),
               child: SvgPicture.asset(
-                userData['avatar'],
+                'Icons/profile.svg', // Static for now
                 fit: BoxFit.cover,
-                // Fallback if SVG doesn't load
                 placeholderBuilder: (context) => Icon(
                   Icons.person,
                   color: Colors.white54,
@@ -196,11 +239,11 @@ class _HomePageState extends State<HomePage> {
                     style: TextStyle(fontSize: 18, color: Colors.white),
                     children: [
                       TextSpan(
-                        text: userData['greeting'],
+                        text: "Hello, ",
                         style: TextStyle(color: Colors.white70),
                       ),
                       TextSpan(
-                        text: userData['name'],
+                        text: _userName,
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
@@ -212,7 +255,7 @@ class _HomePageState extends State<HomePage> {
                 ),
                 SizedBox(height: 4),
                 Text(
-                  userData['subtitle'],
+                  "What are you looking for?",
                   style: TextStyle(
                     fontSize: 14,
                     color: Colors.white54,
@@ -224,7 +267,7 @@ class _HomePageState extends State<HomePage> {
 
           // Home Title
           Text(
-            headerData['title'],
+            "Home",
             style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.w600,
@@ -237,16 +280,13 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildSearchBar() {
-    final searchData = pageData['search'];
-
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       child: GestureDetector(
         onTap: () {
-          // Navigate to Search Page using Go Router
           NavigationHelper.goToSearch(
             context,
-            allProducts: getAllProducts(),
+            allProducts: _convertProductsToMapList(_allProducts),
           );
         },
         child: Container(
@@ -259,11 +299,10 @@ class _HomePageState extends State<HomePage> {
             children: [
               SizedBox(width: 20),
               SvgPicture.asset(
-                searchData['icon'],
+                'Icons/search_icon.svg',
                 width: 24,
                 height: 24,
                 colorFilter: ColorFilter.mode(Colors.white54, BlendMode.srcIn),
-                // Fallback if SVG doesn't load
                 placeholderBuilder: (context) => Icon(
                   Icons.search,
                   color: Colors.white54,
@@ -273,7 +312,7 @@ class _HomePageState extends State<HomePage> {
               SizedBox(width: 15),
               Expanded(
                 child: Text(
-                  searchData['placeholder'],
+                  "Search Product",
                   style: TextStyle(color: Colors.white54, fontSize: 16),
                 ),
               ),
@@ -285,24 +324,20 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildCategoryPills() {
-    final categories = pageData['categories'] as List;
-
     return Container(
       height: 50,
       margin: EdgeInsets.symmetric(vertical: 20),
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         padding: EdgeInsets.symmetric(horizontal: 20),
-        itemCount: categories.length,
+        itemCount: _categories.length,
         itemBuilder: (context, index) {
-          final category = categories[index];
-          final isSelected = selectedCategory == category['name'];
+          final category = _categories[index];
+          final isSelected = selectedCategoryName == category.name;
 
           return GestureDetector(
             onTap: () {
-              setState(() {
-                selectedCategory = category['name'];
-              });
+              _filterProductsByCategory(category.name);
             },
             child: Container(
               margin: EdgeInsets.only(right: 15),
@@ -312,7 +347,7 @@ class _HomePageState extends State<HomePage> {
                 borderRadius: BorderRadius.circular(25),
               ),
               child: Text(
-                category['name'],
+                category.name,
                 style: TextStyle(
                   color: isSelected ? Colors.white : Colors.white70,
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
@@ -326,18 +361,15 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildProductsSection() {
-    final sectionData = pageData['sections'][selectedCategory] as List? ?? [];
-
     return Column(
       children: [
-        // Section Header
         Padding(
           padding: EdgeInsets.symmetric(horizontal: 20),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                selectedCategory,
+                selectedCategoryName,
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -346,11 +378,12 @@ class _HomePageState extends State<HomePage> {
               ),
               GestureDetector(
                 onTap: () {
-                  // Navigate to search page with category filter using Go Router
-                  NavigationHelper.goToSearch(
+                  NavigationHelper.goToProducts(
                     context,
-                    allProducts: getAllProducts(),
-                    initialCategory: selectedCategory,
+                    products: _convertProductsToMapList(_displayedProducts),
+                    // Pass the already filtered products for this category
+                    // If you want to load all for "see all", pass _allProducts
+                    // For now, it will show products for the currently selected category.
                   );
                 },
                 child: Text(
@@ -368,13 +401,12 @@ class _HomePageState extends State<HomePage> {
 
         SizedBox(height: 20),
 
-        // Products List
         Expanded(
           child: ListView.builder(
             padding: EdgeInsets.symmetric(horizontal: 20),
-            itemCount: sectionData.length,
+            itemCount: _displayedProducts.length,
             itemBuilder: (context, index) {
-              final product = sectionData[index];
+              final product = _displayedProducts[index];
               return _buildProductCard(product);
             },
           ),
@@ -383,7 +415,12 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildProductCard(Map<String, dynamic> product) {
+  Widget _buildProductCard(Product product) {
+    // Add dummy sales/rating data as these are not in the backend Product entity
+    final dummySales = "1200 Sales";
+    final dummyRating = "4.5 Ratings";
+    final dummyPrice = "\$310"; // Hardcoded as price is not in backend Product entity
+
     return Container(
       margin: EdgeInsets.only(bottom: 20),
       padding: EdgeInsets.all(20),
@@ -394,18 +431,16 @@ class _HomePageState extends State<HomePage> {
       ),
       child: Column(
         children: [
-          // Product Image and Heart Icon
           Expanded(
             flex: 3,
             child: Stack(
               children: [
                 Center(
                   child: SvgPicture.asset(
-                    product['image'],
+                    product.image, // Use backend image path
                     width: 120,
                     height: 120,
                     fit: BoxFit.contain,
-                    // Fallback if SVG doesn't load
                     placeholderBuilder: (context) => Container(
                       width: 120,
                       height: 120,
@@ -427,7 +462,8 @@ class _HomePageState extends State<HomePage> {
                   child: GestureDetector(
                     onTap: () {
                       setState(() {
-                        product['isFavorite'] = !product['isFavorite'];
+                        // This 'isFavorite' state is local to UI
+                        // If backend had a favorite endpoint, it would be called here
                       });
                     },
                     child: Container(
@@ -437,8 +473,8 @@ class _HomePageState extends State<HomePage> {
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Icon(
-                        product['isFavorite'] ? Icons.favorite : Icons.favorite_border,
-                        color: product['isFavorite'] ? Colors.red : Colors.white70,
+                        false ? Icons.favorite : Icons.favorite_border, // Hardcoded false for now
+                        color: false ? Colors.red : Colors.white70,
                         size: 20,
                       ),
                     ),
@@ -447,8 +483,6 @@ class _HomePageState extends State<HomePage> {
               ],
             ),
           ),
-
-          // Product Details
           Container(
             padding: EdgeInsets.all(15),
             decoration: BoxDecoration(
@@ -457,13 +491,12 @@ class _HomePageState extends State<HomePage> {
             ),
             child: Row(
               children: [
-                // Product Info
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        product['name'],
+                        product.name,
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -472,7 +505,7 @@ class _HomePageState extends State<HomePage> {
                       ),
                       SizedBox(height: 4),
                       Text(
-                        "${product['sales']} • ${product['rating']}",
+                        "$dummySales • $dummyRating",
                         style: TextStyle(
                           fontSize: 14,
                           color: Colors.white70,
@@ -481,10 +514,8 @@ class _HomePageState extends State<HomePage> {
                     ],
                   ),
                 ),
-
-                // Price
                 Text(
-                  "\$${product['price']}",
+                  dummyPrice,
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -521,14 +552,16 @@ class _HomePageState extends State<HomePage> {
           final isSelected = selectedNavIndex == item['index'];
           return GestureDetector(
             onTap: () {
-              if (item['index'] == 0) {
-                setState(() {
-                  selectedNavIndex = item['index'];
-                });
-              } else {
-                // Static for other tabs as requested
-                print("${item['label']} tapped (static)");
+              setState(() {
+                selectedNavIndex = item['index'];
+              });
+              if (item['index'] == 3) { // LOGIN tab
+                NavigationHelper.goToLogin(context);
+              } else if (item['index'] == 0) { // HOME tab
+                // Already on home, maybe refresh or do nothing
+                _loadData(); // Refresh data on home click
               }
+              // Other tabs are static as per previous instruction
             },
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,

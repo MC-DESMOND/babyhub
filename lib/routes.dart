@@ -4,12 +4,16 @@ import 'main.dart';
 import 'product_search.dart';
 import 'product.dart';
 import 'details.dart';
+import 'screens/login_screen.dart'; // New import
+import 'screens/signup_screen.dart'; // New import
 
 class AppRoutes {
   static const String home = '/';
   static const String search = '/search';
   static const String products = '/products';
   static const String details = '/details';
+  static const String login = '/login'; // New route
+  static const String signup = '/signup'; // New route
 }
 
 // Go Router Configuration
@@ -68,6 +72,20 @@ final GoRouter router = GoRouter(
 
         return DetailsPage(product: product);
       },
+    ),
+
+    // Login Route
+    GoRoute(
+      path: AppRoutes.login,
+      name: 'login',
+      builder: (context, state) => const LoginScreen(),
+    ),
+
+    // Signup Route
+    GoRoute(
+      path: AppRoutes.signup,
+      name: 'signup',
+      builder: (context, state) => const SignupScreen(),
     ),
   ],
 
@@ -158,6 +176,16 @@ class NavigationHelper {
         'product': product,
       },
     );
+  }
+
+  // Navigate to login page
+  static void goToLogin(BuildContext context) {
+    context.pushNamed('login');
+  }
+
+  // Navigate to signup page
+  static void goToSignup(BuildContext context) {
+    context.pushNamed('signup');
   }
 
   // Navigate back

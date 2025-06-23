@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 //import 'package:go_router/go_router.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'routes.dart';
 
 class SearchProductPage extends StatefulWidget {
-  final List<Map<String, dynamic>> allProducts;
+  final List<Map<String, dynamic>> allProducts; // Now expects data from HomePage
   final String? initialCategory;
 
   const SearchProductPage({
@@ -239,7 +240,8 @@ class _SearchProductPageState extends State<SearchProductPage> {
             'rating': product['rating'].replaceAll(' Ratings', ''),
             'sales': product['sales'].replaceAll(' Sales', ''),
             'stock': '48', // Default stock value
-            'description': 'A sleek black joystick with neon accents and a comfortable grip for precise gaming control...',
+            'description': 'A sleek black joystick with neon accents and a comfortable grip for precise gaming control...', 
+            'image': product['image'], // Pass the image from the product object
           },
         );
       },
@@ -261,10 +263,16 @@ class _SearchProductPageState extends State<SearchProductPage> {
                 color: Colors.grey[700],
                 borderRadius: BorderRadius.circular(15),
               ),
-              child: Icon(
-                Icons.image,
-                color: Colors.white54,
-                size: 40,
+              child: SvgPicture.asset(
+                product['image'], // Use the image from the product map
+                width: 40,
+                height: 30,
+                color: Colors.grey[600],
+                placeholderBuilder: (context) => Icon(
+                  Icons.image,
+                  color: Colors.white54,
+                  size: 40,
+                ),
               ),
             ),
 
@@ -286,7 +294,7 @@ class _SearchProductPageState extends State<SearchProductPage> {
                   ),
                   SizedBox(height: 4),
                   Text(
-                    product['category'],
+                    product['category'], // Category name from product map
                     style: TextStyle(
                       fontSize: 14,
                       color: Color(0xFF00C896),
