@@ -35,7 +35,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
     final loginRequest = LoginRequest(email: email, password: password);
     final jwtResponse = await _authService.signIn(loginRequest);
-
+    print('JWT Response: $jwtResponse'); // Debugging line to check the response
+    User? currentUser = await _authService.getCurrentUser();
+    print('Current User: $currentUser'); // Debugging line to check the current user
     setState(() {
       _isLoading = false;
     });

@@ -22,7 +22,10 @@ class AuthService {
       );
 
       if (response.statusCode == 200) {
+        print('Sign in successful: ${response.body}');
         final Map<String, dynamic> data = jsonDecode(response.body);
+        print('Decoded JWT Response: $data'); // Debugging line to check the response
+      
         final jwtResponse = JwtResponse.fromJson(data);
         await _saveToken(jwtResponse);
         return jwtResponse;
@@ -38,7 +41,7 @@ class AuthService {
 
   Future<void> _saveToken(JwtResponse jwtResponse) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_tokenKey, jwtResponse.token);
+    await prefs.setString(_tokenKey, jwtResponse.accessToken);
     await prefs.setInt(_userIdKey, jwtResponse.id);
     await prefs.setString(_userNameKey, jwtResponse.name);
     await prefs.setString(_userEmailKey, jwtResponse.email);

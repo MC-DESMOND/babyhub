@@ -10,7 +10,7 @@ class CategoryService {
   Future<List<Category>?> readAllCategories() async {
     final token = await _authService.getToken();
     if (token == null) {
-      print('No token found. User not authenticated for categories.');
+      print('[DEV] No token found. User not authenticated for categories.');
       return null; // Or handle re-authentication
     }
 
@@ -26,13 +26,18 @@ class CategoryService {
 
       if (response.statusCode == 200) {
         final List<dynamic> categoryJson = jsonDecode(response.body);
+        print('[DEV] Categories loaded successfully: ${categoryJson.length} categories found.');
+        if (categoryJson.isEmpty) {
+          print('[DEV] No categories found.');
+          return [];
+        }
         return categoryJson.map((json) => Category.fromJson(json)).toList();
       } else {
-        print('Failed to load categories: ${response.statusCode} - ${response.body}');
+        print('[DEV] Failed to load categories: ${response.statusCode} - ${response.body}');
         return null;
       }
     } catch (e) {
-      print('Error loading categories: $e');
+      print('[DEV] Error loading categories: $e');
       return null;
     }
   }
