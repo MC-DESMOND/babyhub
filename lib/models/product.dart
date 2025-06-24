@@ -3,13 +3,17 @@ import 'category.dart';
 class Product {
   final int id;
   final String name;
-  final String image; // Assuming this will be a URL or identifier
-  final Category category; // This links to the Category entity
+  final String image;
+  final String? description;
+  final int price; // Changed to int for price
+  final Category category;
 
   Product({
     required this.id,
     required this.name,
     required this.image,
+    this.description,
+    required this.price,
     required this.category,
   });
 
@@ -17,7 +21,9 @@ class Product {
     return Product(
       id: json['id'],
       name: json['name'],
-      image: json['image'] ?? 'Icons/placeholder.svg', // Default if image is null
+      image: json['image'] ?? 'Icons/placeholder.svg',
+      description: json['description'],
+      price: (json['price'] as int?) ?? 0, // Safely parse price to int
       category: Category.fromJson(json['category']),
     );
   }
@@ -27,6 +33,8 @@ class Product {
       'id': id,
       'name': name,
       'image': image,
+      'description': description,
+      'price': price,
       'category': category.toJson(),
     };
   }

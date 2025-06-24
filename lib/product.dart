@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'routes.dart';
-// No direct API service needed here if products are passed in
 
 class ProductPage extends StatefulWidget {
-  final List<Map<String, dynamic>> products; // Now expects data from HomePage
+  final List<Map<String, dynamic>> products;
   final String? searchQuery;
 
   const ProductPage({
@@ -18,20 +17,18 @@ class ProductPage extends StatefulWidget {
 }
 
 class _ProductPageState extends State<ProductPage> {
-  // Use widget.products directly, remove hardcoded productData
-  // List<Map<String, dynamic>> productData = [...]; // REMOVE THIS
-
-  // Navigation function to details page using GoRouter
   void navigateToDetails(Map<String, dynamic> product) {
     NavigationHelper.goToDetails(
       context,
       product: {
+        'id': product['id'], // Ensure product ID is passed
         'name': product['name'],
-        'price': product['price'].toString(),
-        'rating': product['rating'].replaceAll(' Ratings', ''), // Remove " Ratings" for consistency
-        'sales': product['sales'].replaceAll(' Sales', ''), // Remove " Sales" for consistency
+        'price': product['price'], // Pass price as is (should be int)
+        'rating': product['rating'], // Pass rating as is from map
+        'sales': product['sales'], // Pass sales as is from map
         'stock': '48', // Default stock value, not from backend yet
-        'description': 'A sleek black joystick with neon accents and a comfortable grip for precise gaming control...', // Not from backend yet
+        'description': product['description'] ?? 'A sleek black joystick with neon accents and a comfortable grip for precise gaming control.', // Use description from product map
+        'image': product['image'], // Pass image from product map
       },
     );
   }
@@ -39,14 +36,11 @@ class _ProductPageState extends State<ProductPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFF1A1A1A),
+      backgroundColor: const Color(0xFF1A1A1A),
       body: SafeArea(
         child: Column(
           children: [
-            // Header
             _buildHeader(),
-
-            // Products Grid
             Expanded(
               child: _buildProductsGrid(),
             ),
@@ -58,29 +52,26 @@ class _ProductPageState extends State<ProductPage> {
 
   Widget _buildHeader() {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
       child: Row(
         children: [
-          // Back button using GoRouter
           GestureDetector(
             onTap: () => NavigationHelper.goBack(context),
             child: Container(
               width: 45,
               height: 45,
               decoration: BoxDecoration(
-                color: Color(0xFF2A2A2A),
+                color: const Color(0xFF2A2A2A),
                 borderRadius: BorderRadius.circular(22.5),
               ),
-              child: Icon(
+              child: const Icon(
                 Icons.arrow_back_ios_new,
                 color: Colors.white70,
                 size: 18,
               ),
             ),
           ),
-
-          // Title - centered
-          Expanded(
+          const Expanded(
             child: Center(
               child: Text(
                 "Products",
@@ -92,9 +83,7 @@ class _ProductPageState extends State<ProductPage> {
               ),
             ),
           ),
-
-          // Spacer to balance the layout
-          SizedBox(width: 45),
+          const SizedBox(width: 45),
         ],
       ),
     );
@@ -110,15 +99,15 @@ class _ProductPageState extends State<ProductPage> {
       );
     }
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 20),
       child: GridView.builder(
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
           childAspectRatio: 0.75,
           crossAxisSpacing: 15,
           mainAxisSpacing: 20,
         ),
-        itemCount: widget.products.length, // Use widget.products
+        itemCount: widget.products.length,
         itemBuilder: (context, index) {
           final product = widget.products[index];
           return _buildProductCard(product);
@@ -129,29 +118,28 @@ class _ProductPageState extends State<ProductPage> {
 
   Widget _buildProductCard(Map<String, dynamic> product) {
     return GestureDetector(
-      onTap: () => navigateToDetails(product), // Uses GoRouter navigation
+      onTap: () => navigateToDetails(product),
       child: Container(
         decoration: BoxDecoration(
-          color: Color(0xFF2A2A2A),
+          color: const Color(0xFF2A2A2A),
           borderRadius: BorderRadius.circular(20),
         ),
         child: Column(
           children: [
-            // Product Image Section
             Expanded(
               flex: 3,
               child: Stack(
                 children: [
                   Container(
                     width: double.infinity,
-                    margin: EdgeInsets.all(15),
+                    margin: const EdgeInsets.all(15),
                     decoration: BoxDecoration(
-                      color: Color(0xFF3A3A3A),
+                      color: const Color(0xFF3A3A3A),
                       borderRadius: BorderRadius.circular(15),
                     ),
                     child: Center(
                       child: SvgPicture.asset(
-                        product['image'], // Use passed image path
+                        product['image'],
                         width: 80,
                         height: 80,
                         fit: BoxFit.contain,
@@ -165,7 +153,7 @@ class _ProductPageState extends State<ProductPage> {
                           child: Icon(
                             product['name'].contains('Nintendo')
                                 ? Icons.gamepad
-                                : Icons.headphones, // Simple heuristic for placeholder icon
+                                : Icons.headphones,
                             color: Colors.white54,
                             size: 40,
                           ),
@@ -173,7 +161,6 @@ class _ProductPageState extends State<ProductPage> {
                       ),
                     ),
                   ),
-                  // Heart Icon
                   Positioned(
                     top: 20,
                     right: 20,
@@ -205,12 +192,10 @@ class _ProductPageState extends State<ProductPage> {
                 ],
               ),
             ),
-
-            // Product Details Section
             Container(
               width: double.infinity,
-              margin: EdgeInsets.fromLTRB(15, 0, 15, 15),
-              padding: EdgeInsets.all(15),
+              margin: const EdgeInsets.fromLTRB(15, 0, 15, 15),
+              padding: const EdgeInsets.all(15),
               decoration: BoxDecoration(
                 color: Colors.black45,
                 borderRadius: BorderRadius.circular(15),
@@ -218,35 +203,30 @@ class _ProductPageState extends State<ProductPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Product Name
                   Text(
                     product['name'],
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                     ),
                   ),
-                  SizedBox(height: 4),
-
-                  // Sales and Rating (still dummy for now)
+                  const SizedBox(height: 4),
                   Text(
                     "${product['sales']} • ${product['rating']}",
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 12,
                       color: Colors.white70,
                     ),
                   ),
-                  SizedBox(height: 8),
-
-                  // Price (still dummy for now)
+                  const SizedBox(height: 8),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Spacer(),
+                      const Spacer(),
                       Text(
-                        "\$${product['price']}",
-                        style: TextStyle(
+                        '\$${product['price']}',
+                        style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,

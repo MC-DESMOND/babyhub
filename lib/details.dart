@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'review.dart';
 import 'routes.dart';
+import 'services/cart_service.dart';
+import 'services/auth_service.dart';
 
 class DetailsPage extends StatefulWidget {
   final Map<String, dynamic> product;
@@ -14,7 +16,9 @@ class DetailsPage extends StatefulWidget {
 
 class _DetailsPageState extends State<DetailsPage> {
   bool isFavorite = false; // Local UI state
-  bool isAddedToCart = false; // Local UI state
+  final CartService _cartService = CartService();
+  final AuthService _authService = AuthService();
+  int? _currentUserId;
 
   // Reviews list with initial 3 reviews (still static)
   List<Map<String, dynamic>> reviews = [
@@ -38,11 +42,59 @@ class _DetailsPageState extends State<DetailsPage> {
     },
   ];
 
+  @override
+  void initState() {
+    super.initState();
+    _checkUserAndCartStatus();
+  }
+
+  Future<void> _checkUserAndCartStatus() async {
+    final currentUser = await _authService.getCurrentUser();
+    if (currentUser != null) {
+      _currentUserId = currentUser.id;
+    }
+  }
+
   // Function to add new review
   void addReview(Map<String, dynamic> newReview) {
     setState(() {
       reviews.insert(0, newReview); // Add new review at the beginning
     });
+  }
+
+  Future<void> _handleAddToCart() async {
+    if (_currentUserId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please log in to add items to your cart.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      NavigationHelper.goToLogin(context);
+      return;
+    }
+
+    final response = await _cartService.addItemToCart(
+      _currentUserId!,
+      widget.product['id'], // Assuming 'id' is passed in the product map
+      1, // Add one quantity by default
+    );
+
+    if (response != null && !response.contains('Failed')) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(response),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(response ?? 'Failed to add product to cart.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   @override
@@ -109,7 +161,7 @@ class _DetailsPageState extends State<DetailsPage> {
                       width: 200,
                       height: 150,
                       color: Colors.grey[600],
-                      placeholderBuilder: (context) => Icon(Icons.image, color: Colors.grey[600], size: 100),
+                      placeholderBuilder: (context) =>  Icon(Icons.image, color: Colors.grey[600], size: 100),
                     ),
                   ),
                   Positioned(
@@ -164,7 +216,7 @@ class _DetailsPageState extends State<DetailsPage> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          '${widget.product['sales'] ?? '1200'} • ${widget.product['rating'] ?? '4.5'}', // Sales and Rating are strings
+                          '${widget.product['sales'] ?? '1200'} • ${widget.product['rating'] ?? '4.5'}',
                           style: TextStyle(
                             color: Colors.grey[400],
                             fontSize: 14,
@@ -174,7 +226,7 @@ class _DetailsPageState extends State<DetailsPage> {
                     ),
                   ),
                   Text(
-                    '\$${widget.product['price'] ?? '0.00'}',
+                    '\$${widget.product['price']}', // Display actual price
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 24,
@@ -375,21 +427,17 @@ class _DetailsPageState extends State<DetailsPage> {
               width: double.infinity,
               height: 56,
               child: ElevatedButton(
-                onPressed: () {
-                  setState(() {
-                    isAddedToCart = !isAddedToCart;
-                  });
-                },
+                onPressed: _handleAddToCart, // Call the new handler
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: isAddedToCart ? Colors.grey[700] : Colors.green,
+                  backgroundColor: const Color(0xFF00C896), // Always green for "Add to cart"
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(28),
                   ),
                   elevation: 0,
                 ),
-                child: Text(
-                  isAddedToCart ? 'Added to cart' : 'Add to cart',
-                  style: const TextStyle(
+                child: const Text(
+                  'Add to cart',
+                  style: TextStyle(
                     color: Colors.white,
                     fontSize: 16,
                     fontWeight: FontWeight.w600,

@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/product.dart';
-import '../models/category.dart'; // Needed for creating dummy category for products
+import '../models/category.dart';
 import 'api_config.dart';
 import 'auth_service.dart';
 
@@ -27,7 +27,6 @@ class ProductService {
 
       if (response.statusCode == 200) {
         final List<dynamic> productJson = jsonDecode(response.body);
-        // Assuming the backend product JSON includes a 'category' object
         return productJson.map((json) => Product.fromJson(json)).toList();
       } else {
         print('Failed to load products: ${response.statusCode} - ${response.body}');
@@ -39,8 +38,6 @@ class ProductService {
     }
   }
 
-  // Add create, update, delete methods if needed in the UI
-  // Example for creating a product (requires a valid category ID from backend)
   Future<String?> createProduct(Product product) async {
     final token = await _authService.getToken();
     if (token == null) {
@@ -60,7 +57,7 @@ class ProductService {
       );
 
       if (response.statusCode == 200) {
-        return response.body; // "Product record created successfully."
+        return response.body;
       } else {
         print('Failed to create product: ${response.statusCode} - ${response.body}');
         return 'Failed to create product: ${response.body}';

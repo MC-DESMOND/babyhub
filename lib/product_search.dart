@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-//import 'package:go_router/go_router.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'routes.dart';
 
 class SearchProductPage extends StatefulWidget {
-  final List<Map<String, dynamic>> allProducts; // Now expects data from HomePage
+  final List<Map<String, dynamic>> allProducts;
   final String? initialCategory;
 
   const SearchProductPage({
@@ -26,14 +25,12 @@ class _SearchProductPageState extends State<SearchProductPage> {
   void initState() {
     super.initState();
     _searchController = TextEditingController();
-    // Initialize with all products or filter by initial category
     filteredProducts = widget.initialCategory != null
         ? widget.allProducts
-        .where((product) => product['category'] == widget.initialCategory)
-        .toList()
+            .where((product) => product['category'] == widget.initialCategory)
+            .toList()
         : widget.allProducts;
 
-    // Listen to search text changes
     _searchController.addListener(_onSearchChanged);
   }
 
@@ -55,8 +52,8 @@ class _SearchProductPageState extends State<SearchProductPage> {
     if (searchQuery.isEmpty) {
       filteredProducts = widget.initialCategory != null
           ? widget.allProducts
-          .where((product) => product['category'] == widget.initialCategory)
-          .toList()
+              .where((product) => product['category'] == widget.initialCategory)
+              .toList()
           : widget.allProducts;
     } else {
       filteredProducts = widget.allProducts.where((product) {
@@ -75,17 +72,12 @@ class _SearchProductPageState extends State<SearchProductPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFF1A1A1A),
+      backgroundColor: const Color(0xFF1A1A1A),
       body: SafeArea(
         child: Column(
           children: [
-            // Header with back button and title
             _buildHeader(),
-
-            // Search Bar
             _buildSearchBar(),
-
-            // Search Results
             Expanded(
               child: _buildSearchResults(),
             ),
@@ -97,35 +89,32 @@ class _SearchProductPageState extends State<SearchProductPage> {
 
   Widget _buildHeader() {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
       child: Row(
         children: [
-          // Back button
           GestureDetector(
-            onTap: () => NavigationHelper.goBack(context), // Using Go Router navigation
+            onTap: () => NavigationHelper.goBack(context),
             child: Container(
               width: 45,
               height: 45,
               decoration: BoxDecoration(
-                color: Color(0xFF2A2A2A),
+                color: const Color(0xFF2A2A2A),
                 borderRadius: BorderRadius.circular(22.5),
               ),
-              child: Icon(
+              child: const Icon(
                 Icons.arrow_back_ios_new,
                 color: Colors.white70,
                 size: 18,
               ),
             ),
           ),
-
-          // Title
           Expanded(
             child: Center(
               child: Text(
                 widget.initialCategory != null
                     ? "${widget.initialCategory} Products"
                     : "Product Search",
-                style: TextStyle(
+                style: const TextStyle(
                   color: Colors.white70,
                   fontSize: 20,
                   fontWeight: FontWeight.w500,
@@ -133,9 +122,7 @@ class _SearchProductPageState extends State<SearchProductPage> {
               ),
             ),
           ),
-
-          // Spacer to balance the layout
-          SizedBox(width: 45),
+          const SizedBox(width: 45),
         ],
       ),
     );
@@ -143,27 +130,27 @@ class _SearchProductPageState extends State<SearchProductPage> {
 
   Widget _buildSearchBar() {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       child: Container(
         height: 55,
         decoration: BoxDecoration(
-          color: Color(0xFF2A2A2A),
+          color: const Color(0xFF2A2A2A),
           borderRadius: BorderRadius.circular(30),
         ),
         child: Row(
           children: [
-            SizedBox(width: 20),
-            Icon(
+            const SizedBox(width: 20),
+            const Icon(
               Icons.search,
               color: Colors.white54,
               size: 24,
             ),
-            SizedBox(width: 15),
+            const SizedBox(width: 15),
             Expanded(
               child: TextField(
                 controller: _searchController,
-                style: TextStyle(color: Colors.white, fontSize: 16),
-                decoration: InputDecoration(
+                style: const TextStyle(color: Colors.white, fontSize: 16),
+                decoration: const InputDecoration(
                   hintText: "Search Product",
                   hintStyle: TextStyle(
                     color: Colors.white54,
@@ -178,7 +165,7 @@ class _SearchProductPageState extends State<SearchProductPage> {
                 onTap: () {
                   _searchController.clear();
                 },
-                child: Padding(
+                child: const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 10),
                   child: Icon(
                     Icons.clear,
@@ -187,7 +174,7 @@ class _SearchProductPageState extends State<SearchProductPage> {
                   ),
                 ),
               ),
-            SizedBox(width: 20),
+            const SizedBox(width: 20),
           ],
         ),
       ),
@@ -200,15 +187,15 @@ class _SearchProductPageState extends State<SearchProductPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
+            const Icon(
               Icons.search_off,
               size: 64,
               color: Colors.white24,
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             Text(
               searchQuery.isEmpty ? "Start typing to search products" : "No products found",
-              style: TextStyle(
+              style: const TextStyle(
                 color: Colors.white54,
                 fontSize: 16,
               ),
@@ -219,7 +206,7 @@ class _SearchProductPageState extends State<SearchProductPage> {
     }
 
     return ListView.builder(
-      padding: EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 20),
       itemCount: filteredProducts.length,
       itemBuilder: (context, index) {
         final product = filteredProducts[index];
@@ -231,31 +218,30 @@ class _SearchProductPageState extends State<SearchProductPage> {
   Widget _buildProductCard(Map<String, dynamic> product) {
     return GestureDetector(
       onTap: () {
-        // Navigate to details page using Go Router
         NavigationHelper.goToDetails(
           context,
           product: {
+            'id': product['id'], // Ensure product ID is passed
             'name': product['name'],
-            'price': product['price'].toString(),
-            'rating': product['rating'].replaceAll(' Ratings', ''),
-            'sales': product['sales'].replaceAll(' Sales', ''),
-            'stock': '48', // Default stock value
-            'description': 'A sleek black joystick with neon accents and a comfortable grip for precise gaming control...', 
-            'image': product['image'], // Pass the image from the product object
+            'price': product['price'], // Pass price as is (should be int)
+            'rating': product['rating'],
+            'sales': product['sales'],
+            'stock': '48',
+            'description': product['description'] ?? 'A sleek black joystick with neon accents and a comfortable grip for precise gaming control.',
+            'image': product['image'],
           },
         );
       },
       child: Container(
-        margin: EdgeInsets.only(bottom: 20),
-        padding: EdgeInsets.all(20),
+        margin: const EdgeInsets.only(bottom: 20),
+        padding: const EdgeInsets.all(20),
         height: 120,
         decoration: BoxDecoration(
-          color: Color(0xFF2A2A2A),
+          color: const Color(0xFF2A2A2A),
           borderRadius: BorderRadius.circular(20),
         ),
         child: Row(
           children: [
-            // Product Image
             Container(
               width: 80,
               height: 80,
@@ -264,21 +250,18 @@ class _SearchProductPageState extends State<SearchProductPage> {
                 borderRadius: BorderRadius.circular(15),
               ),
               child: SvgPicture.asset(
-                product['image'], // Use the image from the product map
+                product['image'],
                 width: 40,
                 height: 30,
                 color: Colors.grey[600],
-                placeholderBuilder: (context) => Icon(
+                placeholderBuilder: (context) => const Icon(
                   Icons.image,
                   color: Colors.white54,
                   size: 40,
                 ),
               ),
             ),
-
-            SizedBox(width: 15),
-
-            // Product Details
+            const SizedBox(width: 15),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -286,24 +269,24 @@ class _SearchProductPageState extends State<SearchProductPage> {
                 children: [
                   Text(
                     product['name'],
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                     ),
                   ),
-                  SizedBox(height: 4),
+                  const SizedBox(height: 4),
                   Text(
-                    product['category'], // Category name from product map
-                    style: TextStyle(
+                    product['category'],
+                    style: const TextStyle(
                       fontSize: 14,
                       color: Color(0xFF00C896),
                     ),
                   ),
-                  SizedBox(height: 4),
+                  const SizedBox(height: 4),
                   Text(
                     "${product['sales']} • ${product['rating']}",
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 12,
                       color: Colors.white70,
                     ),
@@ -311,8 +294,6 @@ class _SearchProductPageState extends State<SearchProductPage> {
                 ],
               ),
             ),
-
-            // Price and Favorite
             Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.end,
@@ -329,10 +310,10 @@ class _SearchProductPageState extends State<SearchProductPage> {
                     size: 20,
                   ),
                 ),
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
                 Text(
-                  "\$${product['price']}",
-                  style: TextStyle(
+                  '\$${product['price']}',
+                  style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,

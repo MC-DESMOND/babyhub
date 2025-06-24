@@ -3,9 +3,10 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'routes.dart';
 import 'services/category_service.dart';
 import 'services/product_service.dart';
-import 'services/auth_service.dart'; // To check user login status
+import 'services/auth_service.dart';
 import 'models/category.dart';
 import 'models/product.dart';
+import 'package:go_router/go_router.dart'; // Import GoRouter
 
 void main() {
   runApp(MyApp());
@@ -33,21 +34,19 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  // Services
   final AuthService _authService = AuthService();
   final CategoryService _categoryService = CategoryService();
   final ProductService _productService = ProductService();
 
-  // Data
   List<Category> _categories = [];
-  List<Product> _allProducts = []; // Stores all products fetched
-  List<Product> _displayedProducts = []; // Products for the currently selected category
+  List<Product> _allProducts = [];
+  List<Product> _displayedProducts = [];
 
-  String selectedCategoryName = "Best Seller"; // Default to a static "Best Seller" category initially, will update if backend provides it
+  String selectedCategoryName = "Best Seller";
   int selectedNavIndex = 0;
   bool _isLoading = true;
   String _errorMessage = '';
-  String _userName = 'GoodyFx'; // Default for UI, will be updated from auth
+  String _userName = 'GoodyFx';
 
   @override
   void initState() {
@@ -62,33 +61,28 @@ class _HomePageState extends State<HomePage> {
     });
 
     try {
-      // Check user status
       final currentUser = await _authService.getCurrentUser();
       if (currentUser != null) {
         _userName = currentUser.name;
-        // Also ensure token is valid. If not, maybe navigate to login.
       } else {
-        // If not logged in, data fetching might fail for authenticated endpoints.
-        // For this demo, we'll try to fetch anyway, but alert user.
         print("User not logged in. Data fetching might require authentication.");
       }
 
-      // Fetch categories
       final fetchedCategories = await _categoryService.readAllCategories();
       if (fetchedCategories != null && fetchedCategories.isNotEmpty) {
         _categories = fetchedCategories;
-        // Optionally, set the first category as selected or try to find "Best Seller"
         if (_categories.any((c) => c.name == "Best Seller")) {
           selectedCategoryName = "Best Seller";
-        } else {
+        } else if (_categories.isNotEmpty) {
           selectedCategoryName = _categories.first.name;
+        } else {
+          selectedCategoryName = "No Categories"; // Handle case where categories list is empty
         }
       } else {
         _errorMessage = 'Failed to load categories. Please ensure backend is running and you are logged in.';
         print(_errorMessage);
       }
 
-      // Fetch products
       final fetchedProducts = await _productService.readAllProducts();
       if (fetchedProducts != null && fetchedProducts.isNotEmpty) {
         _allProducts = fetchedProducts;
@@ -112,10 +106,9 @@ class _HomePageState extends State<HomePage> {
       selectedCategoryName = categoryName;
       final selectedCategoryObj = _categories.firstWhere(
         (cat) => cat.name == categoryName,
-        orElse: () => Category(id: -1, name: "Unknown"), // Fallback
+        orElse: () => Category(id: -1, name: "Unknown"), // Fallback for unmatched category
       );
 
-      // Filter products by category ID. Backend Product entity links to Category ID.
       _displayedProducts = _allProducts
           .where((product) => product.category.id == selectedCategoryObj.id)
           .toList();
@@ -127,12 +120,13 @@ class _HomePageState extends State<HomePage> {
       return {
         "id": p.id,
         "name": p.name,
-        "image": p.image, // This is expected to be an asset path or URL
-        "price": 310.0, // Placeholder, as price is not in backend Product entity
-        "sales": "1200 Sales", // Placeholder, not in backend Product entity
-        "rating": "4.5 Ratings", // Placeholder, not in backend Product entity
-        "isFavorite": false, // Local UI state
-        "category": p.category.name, // Used for search page filtering
+        "image": p.image,
+        "description": p.description,
+        "price": p.price,
+        "sales": "1200 Sales",
+        "rating": "4.5 Ratings",
+        "isFavorite": false,
+        "category": p.category.name,
       };
     }).toList();
   }
@@ -163,15 +157,15 @@ class _HomePageState extends State<HomePage> {
                           SizedBox(height: 24),
                           ElevatedButton(
                             onPressed: _loadData,
-                            child: Text('Retry'),
-                            style: ElevatedButton.styleFrom(backgroundColor: Color(0xFF00C896)),
+                            child: const Text('Retry'),
+                            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00C896)),
                           ),
                           SizedBox(height: 16),
                           ElevatedButton(
                             onPressed: () {
                               NavigationHelper.goToLogin(context);
                             },
-                            child: Text('Go to Login'),
+                            child: const Text('Go to Login'),
                             style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
                           ),
                         ],
@@ -180,33 +174,24 @@ class _HomePageState extends State<HomePage> {
                   )
                 : Column(
                     children: [
-                      // Header Section
                       _buildHeader(),
-
-                      // Search Bar
                       _buildSearchBar(),
-
-                      // Category Pills
                       _buildCategoryPills(),
-
-                      // Products Section
                       Expanded(
                         child: _buildProductsSection(),
                       ),
                     ],
                   ),
       ),
-      // Bottom Navigation
       bottomNavigationBar: _buildBottomNavigation(),
     );
   }
 
   Widget _buildHeader() {
     return Padding(
-      padding: EdgeInsets.all(20),
+      padding: const EdgeInsets.all(20),
       child: Row(
         children: [
-          // User Avatar
           Container(
             width: 50,
             height: 50,
@@ -217,9 +202,9 @@ class _HomePageState extends State<HomePage> {
             child: ClipRRect(
               borderRadius: BorderRadius.circular(25),
               child: SvgPicture.asset(
-                'Icons/profile.svg', // Static for now
+                'Icons/profile.svg',
                 fit: BoxFit.cover,
-                placeholderBuilder: (context) => Icon(
+                placeholderBuilder: (context) => const Icon(
                   Icons.person,
                   color: Colors.white54,
                   size: 30,
@@ -227,34 +212,32 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
           ),
-          SizedBox(width: 15),
-
-          // Greeting Text
+          const SizedBox(width: 15),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 RichText(
                   text: TextSpan(
-                    style: TextStyle(fontSize: 18, color: Colors.white),
+                    style: const TextStyle(fontSize: 18, color: Colors.white),
                     children: [
-                      TextSpan(
+                      const TextSpan(
                         text: "Hello, ",
                         style: TextStyle(color: Colors.white70),
                       ),
                       TextSpan(
                         text: _userName,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
                         ),
                       ),
-                      TextSpan(text: "!"),
+                      const TextSpan(text: "!"),
                     ],
                   ),
                 ),
-                SizedBox(height: 4),
-                Text(
+                const SizedBox(height: 4),
+                const Text(
                   "What are you looking for?",
                   style: TextStyle(
                     fontSize: 14,
@@ -264,9 +247,7 @@ class _HomePageState extends State<HomePage> {
               ],
             ),
           ),
-
-          // Home Title
-          Text(
+          const Text(
             "Home",
             style: TextStyle(
               fontSize: 24,
@@ -281,7 +262,7 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildSearchBar() {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       child: GestureDetector(
         onTap: () {
           NavigationHelper.goToSearch(
@@ -292,25 +273,25 @@ class _HomePageState extends State<HomePage> {
         child: Container(
           height: 50,
           decoration: BoxDecoration(
-            color: Color(0xFF2A2A2A),
+            color: const Color(0xFF2A2A2A),
             borderRadius: BorderRadius.circular(25),
           ),
           child: Row(
             children: [
-              SizedBox(width: 20),
+              const SizedBox(width: 20),
               SvgPicture.asset(
                 'Icons/search_icon.svg',
                 width: 24,
                 height: 24,
-                colorFilter: ColorFilter.mode(Colors.white54, BlendMode.srcIn),
-                placeholderBuilder: (context) => Icon(
+                colorFilter: const ColorFilter.mode(Colors.white54, BlendMode.srcIn),
+                placeholderBuilder: (context) => const Icon(
                   Icons.search,
                   color: Colors.white54,
                   size: 24,
                 ),
               ),
-              SizedBox(width: 15),
-              Expanded(
+              const SizedBox(width: 15),
+              const Expanded(
                 child: Text(
                   "Search Product",
                   style: TextStyle(color: Colors.white54, fontSize: 16),
@@ -326,10 +307,10 @@ class _HomePageState extends State<HomePage> {
   Widget _buildCategoryPills() {
     return Container(
       height: 50,
-      margin: EdgeInsets.symmetric(vertical: 20),
+      margin: const EdgeInsets.symmetric(vertical: 20),
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        padding: EdgeInsets.symmetric(horizontal: 20),
+        padding: const EdgeInsets.symmetric(horizontal: 20),
         itemCount: _categories.length,
         itemBuilder: (context, index) {
           final category = _categories[index];
@@ -340,10 +321,10 @@ class _HomePageState extends State<HomePage> {
               _filterProductsByCategory(category.name);
             },
             child: Container(
-              margin: EdgeInsets.only(right: 15),
-              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              margin: const EdgeInsets.only(right: 15),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               decoration: BoxDecoration(
-                color: isSelected ? Color(0xFF00C896) : Color(0xFF2A2A2A),
+                color: isSelected ? const Color(0xFF00C896) : const Color(0xFF2A2A2A),
                 borderRadius: BorderRadius.circular(25),
               ),
               child: Text(
@@ -364,13 +345,13 @@ class _HomePageState extends State<HomePage> {
     return Column(
       children: [
         Padding(
-          padding: EdgeInsets.symmetric(horizontal: 20),
+          padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
                 selectedCategoryName,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
@@ -381,12 +362,9 @@ class _HomePageState extends State<HomePage> {
                   NavigationHelper.goToProducts(
                     context,
                     products: _convertProductsToMapList(_displayedProducts),
-                    // Pass the already filtered products for this category
-                    // If you want to load all for "see all", pass _allProducts
-                    // For now, it will show products for the currently selected category.
                   );
                 },
-                child: Text(
+                child: const Text(
                   "See all",
                   style: TextStyle(
                     fontSize: 16,
@@ -399,11 +377,11 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
 
-        SizedBox(height: 20),
+        const SizedBox(height: 20),
 
         Expanded(
           child: ListView.builder(
-            padding: EdgeInsets.symmetric(horizontal: 20),
+            padding: const EdgeInsets.symmetric(horizontal: 20),
             itemCount: _displayedProducts.length,
             itemBuilder: (context, index) {
               final product = _displayedProducts[index];
@@ -416,17 +394,15 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildProductCard(Product product) {
-    // Add dummy sales/rating data as these are not in the backend Product entity
     final dummySales = "1200 Sales";
     final dummyRating = "4.5 Ratings";
-    final dummyPrice = "\$310"; // Hardcoded as price is not in backend Product entity
 
     return Container(
-      margin: EdgeInsets.only(bottom: 20),
-      padding: EdgeInsets.all(20),
+      margin: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.all(20),
       height: 200,
       decoration: BoxDecoration(
-        color: Color(0xFF2A2A2A),
+        color: const Color(0xFF2A2A2A),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
@@ -437,7 +413,7 @@ class _HomePageState extends State<HomePage> {
               children: [
                 Center(
                   child: SvgPicture.asset(
-                    product.image, // Use backend image path
+                    product.image,
                     width: 120,
                     height: 120,
                     fit: BoxFit.contain,
@@ -448,7 +424,7 @@ class _HomePageState extends State<HomePage> {
                         color: Colors.grey[700],
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: Icon(
+                      child: const Icon(
                         Icons.image,
                         color: Colors.white54,
                         size: 50,
@@ -467,13 +443,13 @@ class _HomePageState extends State<HomePage> {
                       });
                     },
                     child: Container(
-                      padding: EdgeInsets.all(8),
+                      padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
                         color: Colors.black54,
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      child: Icon(
-                        false ? Icons.favorite : Icons.favorite_border, // Hardcoded false for now
+                      child: const Icon(
+                        false ? Icons.favorite : Icons.favorite_border,
                         color: false ? Colors.red : Colors.white70,
                         size: 20,
                       ),
@@ -484,7 +460,7 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
           Container(
-            padding: EdgeInsets.all(15),
+            padding: const EdgeInsets.all(15),
             decoration: BoxDecoration(
               color: Colors.black54,
               borderRadius: BorderRadius.circular(15),
@@ -497,16 +473,16 @@ class _HomePageState extends State<HomePage> {
                     children: [
                       Text(
                         product.name,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
                         ),
                       ),
-                      SizedBox(height: 4),
+                      const SizedBox(height: 4),
                       Text(
                         "$dummySales • $dummyRating",
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 14,
                           color: Colors.white70,
                         ),
@@ -515,8 +491,8 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
                 Text(
-                  dummyPrice,
-                  style: TextStyle(
+                  '\$${product.price.toStringAsFixed(2)}',
+                  style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
@@ -532,15 +508,15 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildBottomNavigation() {
     final List<Map<String, dynamic>> navItems = [
-      {"icon": Icons.home, "label": "HOME", "index": 0},
-      {"icon": Icons.favorite_border, "label": "WISHLIST", "index": 1},
-      {"icon": Icons.shopping_bag_outlined, "label": "CART", "index": 2},
-      {"icon": Icons.person_outline, "label": "LOGIN", "index": 3},
+      {"icon": Icons.home, "label": "HOME", "index": 0, "route": AppRoutes.home},
+      {"icon": Icons.favorite_border, "label": "WISHLIST", "index": 1, "route": null},
+      {"icon": Icons.shopping_bag_outlined, "label": "CART", "index": 2, "route": AppRoutes.cart},
+      {"icon": Icons.person_outline, "label": "LOGIN", "index": 3, "route": AppRoutes.login}
     ];
 
     return Container(
       height: 80,
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: Color(0xFF1A1A1A),
         border: Border(
           top: BorderSide(color: Color(0xFF2A2A2A), width: 1),
@@ -555,28 +531,31 @@ class _HomePageState extends State<HomePage> {
               setState(() {
                 selectedNavIndex = item['index'];
               });
-              if (item['index'] == 3) { // LOGIN tab
-                NavigationHelper.goToLogin(context);
-              } else if (item['index'] == 0) { // HOME tab
-                // Already on home, maybe refresh or do nothing
-                _loadData(); // Refresh data on home click
+              if (item['route'] != null) {
+                // Use goNamed for bottom navigation items
+                router.goNamed(item['route']);
+              } else if (item['index'] == 0) {
+                _loadData(); // Reload home data
+              } else if (item['index'] == 1) { // Wishlist placeholder
+                 ScaffoldMessenger.of(context).showSnackBar(
+                   const SnackBar(content: Text('Wishlist functionality coming soon!')),
+                 );
               }
-              // Other tabs are static as per previous instruction
             },
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(
                   item['icon'],
-                  color: isSelected ? Color(0xFF00C896) : Colors.white54,
+                  color: isSelected ? const Color(0xFF00C896) : Colors.white54,
                   size: 24,
                 ),
-                SizedBox(height: 4),
+                const SizedBox(height: 4),
                 Text(
                   item['label'],
                   style: TextStyle(
                     fontSize: 12,
-                    color: isSelected ? Color(0xFF00C896) : Colors.white54,
+                    color: isSelected ? const Color(0xFF00C896) : Colors.white54,
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                   ),
                 ),
