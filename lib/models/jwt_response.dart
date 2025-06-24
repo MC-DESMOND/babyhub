@@ -4,7 +4,7 @@ class JwtResponse {
   final int id;
   final String email;
   final String name;
-
+  
   JwtResponse({
     required this.accessToken,
     required this.tokenType,
