@@ -6,33 +6,43 @@ import 'product.dart';
 import 'details.dart';
 import 'screens/login_screen.dart';
 import 'screens/signup_screen.dart';
-import 'screens/cart_screen.dart'; // New import
+import 'screens/cart_screen.dart';
+import 'screens/profile_screen.dart'; // New import
 
 class AppRoutes {
-  static const String home = '/';
-  static const String search = '/search';
-  static const String products = '/products';
-  static const String details = '/details';
-  static const String login = '/login';
-  static const String signup = '/signup';
-  static const String cart = '/cart'; // New route
+  static const String homePath = '/';
+  static const String homeRouteName = 'home';
+  static const String searchPath = '/search';
+  static const String searchRouteName = 'search';
+  static const String productsPath = '/products';
+  static const String productsRouteName = 'products';
+  static const String detailsPath = '/details';
+  static const String detailsRouteName = 'details';
+  static const String loginPath = '/login';
+  static const String loginRouteName = 'login';
+  static const String signupPath = '/signup';
+  static const String signupRouteName = 'signup';
+  static const String cartPath = '/cart';
+  static const String cartRouteName = 'cart';
+  static const String profilePath = '/profile'; // New path
+  static const String profileRouteName = 'profile'; // New route name
 }
 
 // Go Router Configuration
 final GoRouter router = GoRouter(
-  initialLocation: AppRoutes.home,
+  initialLocation: AppRoutes.homePath,
   routes: [
     // Home Route
     GoRoute(
-      path: AppRoutes.home,
-      name: 'home',
+      path: AppRoutes.homePath,
+      name: AppRoutes.homeRouteName,
       builder: (context, state) => const HomePage(),
     ),
 
     // Search Route
     GoRoute(
-      path: AppRoutes.search,
-      name: 'search',
+      path: AppRoutes.searchPath,
+      name: AppRoutes.searchRouteName,
       builder: (context, state) {
         // Extract parameters from extra data
         final Map<String, dynamic>? extra = state.extra as Map<String, dynamic>?;
@@ -48,8 +58,8 @@ final GoRouter router = GoRouter(
 
     // Products Route
     GoRoute(
-      path: AppRoutes.products,
-      name: 'products',
+      path: AppRoutes.productsPath,
+      name: AppRoutes.productsRouteName,
       builder: (context, state) {
         // Extract parameters from extra data
         final Map<String, dynamic>? extra = state.extra as Map<String, dynamic>?;
@@ -65,8 +75,8 @@ final GoRouter router = GoRouter(
 
     // Details Route
     GoRoute(
-      path: AppRoutes.details,
-      name: 'details',
+      path: AppRoutes.detailsPath,
+      name: AppRoutes.detailsRouteName,
       builder: (context, state) {
         // Extract product data from extra
         final Map<String, dynamic>? extra = state.extra as Map<String, dynamic>?;
@@ -78,23 +88,30 @@ final GoRouter router = GoRouter(
 
     // Login Route
     GoRoute(
-      path: AppRoutes.login,
-      name: 'login',
+      path: AppRoutes.loginPath,
+      name: AppRoutes.loginRouteName,
       builder: (context, state) => const LoginScreen(),
     ),
 
     // Signup Route
     GoRoute(
-      path: AppRoutes.signup,
-      name: 'signup',
+      path: AppRoutes.signupPath,
+      name: AppRoutes.signupRouteName,
       builder: (context, state) => const SignupScreen(),
     ),
 
     // Cart Route
     GoRoute(
-      path: AppRoutes.cart,
-      name: 'cart',
+      path: AppRoutes.cartPath,
+      name: AppRoutes.cartRouteName,
       builder: (context, state) => const CartScreen(),
+    ),
+
+    // Profile Route (New)
+    GoRoute(
+      path: AppRoutes.profilePath,
+      name: AppRoutes.profileRouteName,
+      builder: (context, state) => const ProfileScreen(),
     ),
   ],
 
@@ -129,7 +146,7 @@ final GoRouter router = GoRouter(
           ),
           const SizedBox(height: 24),
           ElevatedButton(
-            onPressed: () => context.go(AppRoutes.home),
+            onPressed: () => NavigationHelper.goHome(context),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF00C896),
               foregroundColor: Colors.white,
@@ -151,7 +168,7 @@ class NavigationHelper {
     String? initialCategory,
   }) {
     context.pushNamed(
-      'search',
+      AppRoutes.searchRouteName,
       extra: {
         'allProducts': allProducts,
         'initialCategory': initialCategory,
@@ -166,7 +183,7 @@ class NavigationHelper {
     String? searchQuery,
   }) {
     context.pushNamed(
-      'products',
+      AppRoutes.productsRouteName,
       extra: {
         'products': products,
         'searchQuery': searchQuery,
@@ -180,7 +197,7 @@ class NavigationHelper {
     required Map<String, dynamic> product,
   }) {
     context.pushNamed(
-      'details',
+      AppRoutes.detailsRouteName,
       extra: {
         'product': product,
       },
@@ -189,17 +206,22 @@ class NavigationHelper {
 
   // Navigate to login page
   static void goToLogin(BuildContext context) {
-    context.pushNamed('login');
+    context.pushNamed(AppRoutes.loginRouteName);
   }
 
   // Navigate to signup page
   static void goToSignup(BuildContext context) {
-    context.pushNamed('signup');
+    context.pushNamed(AppRoutes.signupRouteName);
   }
 
   // Navigate to cart page (go as it's a main tab)
   static void goToCart(BuildContext context) {
-    context.goNamed('cart');
+    context.goNamed(AppRoutes.cartRouteName);
+  }
+
+  // Navigate to profile page (go as it's a main tab)
+  static void goToProfile(BuildContext context) {
+    context.goNamed(AppRoutes.profileRouteName);
   }
 
   // Navigate back
@@ -207,12 +229,12 @@ class NavigationHelper {
     if (context.canPop()) {
       context.pop();
     } else {
-      context.go(AppRoutes.home);
+      context.go(AppRoutes.homePath);
     }
   }
 
   // Navigate to home
   static void goHome(BuildContext context) {
-    context.go(AppRoutes.home);
+    context.go(AppRoutes.homePath);
   }
 }

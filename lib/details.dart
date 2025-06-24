@@ -4,6 +4,8 @@ import 'review.dart';
 import 'routes.dart';
 import 'services/cart_service.dart';
 import 'services/auth_service.dart';
+import 'services/review_service.dart'; // Import ReviewService
+import 'models/review.dart'; // Import Review model
 
 class DetailsPage extends StatefulWidget {
   final Map<String, dynamic> product;
@@ -18,34 +20,20 @@ class _DetailsPageState extends State<DetailsPage> {
   bool isFavorite = false; // Local UI state
   final CartService _cartService = CartService();
   final AuthService _authService = AuthService();
+  final ReviewService _reviewService = ReviewService(); // Instantiate ReviewService
   int? _currentUserId;
 
-  // Reviews list with initial 3 reviews (still static)
-  List<Map<String, dynamic>> reviews = [
-    {
-      'text': 'Excellent joystick company! Their products are durable, responsive, and enhance gaming experience remarkably. Highly recommend!',
-      'reviewer': 'Emon Hasan',
-      'rating': 5,
-      'timestamp': DateTime.now().subtract(const Duration(days: 5)),
-    },
-    {
-      'text': 'Excellent joystick company! Their products are durable, responsive, and enhance gaming experience remarkably. Highly recommend!',
-      'reviewer': 'Sarah Johnson',
-      'rating': 4,
-      'timestamp': DateTime.now().subtract(const Duration(days: 3)),
-    },
-    {
-      'text': 'Excellent joystick company! Their products are durable, responsive, and enhance gaming experience remarkably. Highly recommend!',
-      'reviewer': 'Mike Chen',
-      'rating': 5,
-      'timestamp': DateTime.now().subtract(const Duration(days: 1)),
-    },
-  ];
+  List<Review> reviews = []; // Changed to dynamic list of Review objects
+  bool _isLoadingReviews = true;
+  String _reviewsErrorMessage = '';
 
   @override
   void initState() {
     super.initState();
+    // Initialize isFavorite based on product data if available
+    isFavorite = widget.product['isFavorite'] as bool? ?? false;
     _checkUserAndCartStatus();
+    _loadReviews(); // Load reviews when the page initializes
   }
 
   Future<void> _checkUserAndCartStatus() async {
@@ -55,10 +43,57 @@ class _DetailsPageState extends State<DetailsPage> {
     }
   }
 
-  // Function to add new review
-  void addReview(Map<String, dynamic> newReview) {
+  Future<void> _loadReviews() async {
     setState(() {
-      reviews.insert(0, newReview); // Add new review at the beginning
+      _isLoadingReviews = true;
+      _reviewsErrorMessage = '';
+    });
+    try {
+      final fetchedReviews = await _reviewService.getReviewsForProduct(widget.product['id']);
+      setState(() {
+        reviews = fetchedReviews ?? []; // Use empty list if null
+        _isLoadingReviews = false;
+      });
+    } catch (e) {
+      setState(() {
+        _reviewsErrorMessage = 'Failed to load reviews: $e';
+        _isLoadingReviews = false;
+      });
+    }
+  }
+
+  // Function to add new review
+  void addReview(Map<String, dynamic> newReviewData) async {
+    if (_currentUserId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please log in to submit a review.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      NavigationHelper.goToLogin(context);
+      return;
+    }
+
+    setState(() {
+      _isLoadingReviews = true;
+    });
+
+    final response = await _reviewService.createReview(
+      _currentUserId!,
+      widget.product['id'],
+      newReviewData['text'],
+      newReviewData['rating'],
+    );
+
+    if (response != null && !response.contains('Failed')) {
+      _showSnackBar('Review submitted successfully!', isError: false);
+      await _loadReviews(); // Reload reviews after submitting
+    } else {
+      _showSnackBar(response ?? 'Failed to submit review.', isError: true);
+    }
+    setState(() {
+      _isLoadingReviews = false;
     });
   }
 
@@ -81,24 +116,38 @@ class _DetailsPageState extends State<DetailsPage> {
     );
 
     if (response != null && !response.contains('Failed')) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(response),
-          backgroundColor: Colors.green,
-        ),
-      );
+      _showSnackBar('Product added to cart successfully!', isError: false);
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(response ?? 'Failed to add product to cart.'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      _showSnackBar(response ?? 'Failed to add product to cart.', isError: true);
     }
+  }
+
+  void _showSnackBar(String message, {bool isError = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError ? Colors.red : Colors.green,
+      ),
+    );
+  }
+
+  String _formatDate(DateTime date) {
+    // Manual date formatting without intl package
+    final List<String> months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return '${months[date.month - 1]} ${date.day}, ${date.year}';
   }
 
   @override
   Widget build(BuildContext context) {
+    // Use product average rating if available, otherwise default
+    final double averageRating = widget.product['averageRating'] is num
+        ? (widget.product['averageRating'] as num).toDouble() : 0.0;
+    final String formattedAverageRating = averageRating.toStringAsFixed(1);
+
+    // Use actual sales and stock from product map
+    final int sales = widget.product['sales'] as int? ?? 0;
+    final int stock = widget.product['stock'] as int? ?? 0;
+
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
@@ -160,8 +209,8 @@ class _DetailsPageState extends State<DetailsPage> {
                       widget.product['image'] ?? 'Icons/controller.svg', // Use product image
                       width: 200,
                       height: 150,
-                      color: Colors.grey[600],
-                      placeholderBuilder: (context) =>  Icon(Icons.image, color: Colors.grey[600], size: 100),
+                      colorFilter: const ColorFilter.mode(Colors.grey, BlendMode.srcIn),
+                      placeholderBuilder: (context) => const Icon(Icons.image, color: Colors.grey, size: 100),
                     ),
                   ),
                   Positioned(
@@ -216,7 +265,8 @@ class _DetailsPageState extends State<DetailsPage> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          '${widget.product['sales'] ?? '1200'} • ${widget.product['rating'] ?? '4.5'}',
+                          // Display actual average rating from backend
+                          '$formattedAverageRating Rating \u2022 $sales Sales',
                           style: TextStyle(
                             color: Colors.grey[400],
                             fontSize: 14,
@@ -226,7 +276,7 @@ class _DetailsPageState extends State<DetailsPage> {
                     ),
                   ),
                   Text(
-                    '\$${widget.product['price']}', // Display actual price
+                    '\$${(widget.product['price'] as int).toStringAsFixed(2)}', // Display actual price
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 24,
@@ -254,7 +304,7 @@ class _DetailsPageState extends State<DetailsPage> {
                       'Icons/controller.svg', // Still hardcoded for additional images
                       width: 40,
                       height: 30,
-                      color: Colors.grey[600],
+                      colorFilter: const ColorFilter.mode(Colors.grey, BlendMode.srcIn),
                     ),
                   ),
                 );
@@ -292,24 +342,24 @@ class _DetailsPageState extends State<DetailsPage> {
             ),
             const SizedBox(height: 24),
 
-            // Rating, Sales, Stock Row (still dummy data)
+            // Rating, Sales, Stock Row (now using backend average rating)
             Row(
               children: [
-                _buildInfoChip('${widget.product['rating'] ?? '4.5'} Rating'),
+                _buildInfoChip('$formattedAverageRating Rating'), // Use formatted average rating
                 const SizedBox(width: 12),
-                _buildInfoChip('${widget.product['sales'] ?? '1200'} Sales'),
+                _buildInfoChip('$sales Sales'), // Use actual sales
                 const SizedBox(width: 12),
-                _buildInfoChip('${widget.product['stock'] ?? '48'} Stock'),
+                _buildInfoChip('$stock Stock'), // Use actual stock
               ],
             ),
             const SizedBox(height: 32),
 
-            // Review Section (still static reviews)
+            // Review Section (now dynamic reviews)
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text(
-                  'Review',
+                  'Reviews',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 20,
@@ -318,7 +368,6 @@ class _DetailsPageState extends State<DetailsPage> {
                 ),
                 GestureDetector(
                   onTap: () {
-                    // Show review popup
                     showReviewPopup(context, addReview);
                   },
                   child: Container(
@@ -341,85 +390,115 @@ class _DetailsPageState extends State<DetailsPage> {
             ),
             const SizedBox(height: 16),
 
-            // Reviews List (Horizontal Scroll)
-            SizedBox(
-              height: 120,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                itemCount: reviews.length,
-                itemBuilder: (context, index) {
-                  final review = reviews[index];
-                  return Container(
-                    width: 280,
-                    margin: EdgeInsets.only(right: index < reviews.length - 1 ? 16 : 0),
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[900],
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          review['text'],
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            height: 1.4,
-                          ),
-                          maxLines: 3,
-                          overflow: TextOverflow.ellipsis,
+            _isLoadingReviews
+                ? const Center(child: CircularProgressIndicator(color: Color(0xFF00C896)))
+                : _reviewsErrorMessage.isNotEmpty
+                    ? Center(
+                        child: Text(
+                          _reviewsErrorMessage,
+                          style: const TextStyle(color: Colors.white70, fontSize: 14),
                         ),
-                        const Spacer(),
-                        Row(
-                          children: [
-                            Container(
-                              width: 32,
-                              height: 32,
-                              decoration: BoxDecoration(
-                                color: Colors.grey[700],
-                                shape: BoxShape.circle,
-                              ),
-                              child: Center(
-                                child: SvgPicture.asset(
-                                  'Icons/profile.svg',
-                                  width: 20,
-                                  height: 20,
-                                  color: Colors.grey[400],
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
+                      )
+                    : (reviews.isEmpty)
+                        ? const Center(
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(vertical: 20.0),
                               child: Text(
-                                review['reviewer'],
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500,
-                                ),
+                                'No reviews yet. Be the first to review!',
+                                style: TextStyle(color: Colors.white54, fontSize: 16),
                               ),
                             ),
-                            // Star rating display
-                            Row(
-                              children: List.generate(5, (starIndex) {
-                                return Icon(
-                                  Icons.star,
-                                  size: 12,
-                                  color: starIndex < review['rating']
-                                      ? const Color(0xFFFFD700)
-                                      : Colors.grey[600],
+                          )
+                        : SizedBox(
+                            height: 120,
+                            child: ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: reviews.length,
+                              itemBuilder: (context, index) {
+                                final review = reviews[index];
+                                return Container(
+                                  width: 280,
+                                  margin: EdgeInsets.only(right: index < reviews.length - 1 ? 16 : 0),
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[900],
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        review.text,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 12,
+                                          height: 1.4,
+                                        ),
+                                        maxLines: 3,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const Spacer(),
+                                      Row(
+                                        children: [
+                                          Container(
+                                            width: 32,
+                                            height: 32,
+                                            decoration: BoxDecoration(
+                                              color: Colors.grey[700],
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: Center(
+                                              child: SvgPicture.asset(
+                                                'Icons/profile.svg',
+                                                width: 20,
+                                                height: 20,
+                                                colorFilter: const ColorFilter.mode(Colors.grey, BlendMode.srcIn),
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  review.reviewerName,
+                                                  style: const TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 14,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
+                                                Text(
+                                                  _formatDate(review.reviewDate), // Formatted date
+                                                  style: TextStyle(
+                                                    color: Colors.grey[400],
+                                                    fontSize: 10,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          // Star rating display
+                                          Row(
+                                            children: List.generate(5, (starIndex) {
+                                              return Icon(
+                                                Icons.star,
+                                                size: 12,
+                                                color: starIndex < review.rating
+                                                    ? const Color(0xFFFFD700)
+                                                    : Colors.grey[600],
+                                              );
+                                            }),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
                                 );
-                              }),
+                              },
                             ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              ),
-            ),
+                          ),
             const SizedBox(height: 32),
 
             // Add to Cart Button (local state)
@@ -429,7 +508,7 @@ class _DetailsPageState extends State<DetailsPage> {
               child: ElevatedButton(
                 onPressed: _handleAddToCart, // Call the new handler
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF00C896), // Always green for "Add to cart"
+                  backgroundColor: const Color(0xFF00C896), // Always green for 'Add to cart'
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(28),
                   ),

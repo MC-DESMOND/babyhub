@@ -27,6 +27,7 @@ class CategoryService {
       if (response.statusCode == 200) {
         final List<dynamic> categoryJson = jsonDecode(response.body);
         print('[DEV] Categories loaded successfully: ${categoryJson.length} categories found.');
+        print('[DEV] Category JSON: $categoryJson'); // Debugging line to check the response
         if (categoryJson.isEmpty) {
           print('[DEV] No categories found.');
           return [];

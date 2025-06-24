@@ -46,7 +46,8 @@ class _HomePageState extends State<HomePage> {
   int selectedNavIndex = 0;
   bool _isLoading = true;
   String _errorMessage = '';
-  String _userName = 'GoodyFx';
+  String _userName = 'GoodyFx'; // Default, will be updated by currentUser
+  bool _isLoggedIn = false;
 
   @override
   void initState() {
@@ -64,13 +65,17 @@ class _HomePageState extends State<HomePage> {
       final currentUser = await _authService.getCurrentUser();
       if (currentUser != null) {
         _userName = currentUser.name;
+        _isLoggedIn = true;
       } else {
+        _userName = 'GoodyFx';
+        _isLoggedIn = false;
         print("User not logged in. Data fetching might require authentication.");
       }
 
       final fetchedCategories = await _categoryService.readAllCategories();
       if (fetchedCategories != null && fetchedCategories.isNotEmpty) {
         _categories = fetchedCategories;
+        // Ensure "Best Seller" category exists or pick the first available
         if (_categories.any((c) => c.name == "Best Seller")) {
           selectedCategoryName = "Best Seller";
         } else if (_categories.isNotEmpty) {
@@ -123,9 +128,10 @@ class _HomePageState extends State<HomePage> {
         "image": p.image,
         "description": p.description,
         "price": p.price,
-        "sales": "1200 Sales",
-        "rating": "4.5 Ratings",
-        "isFavorite": false,
+        "averageRating": p.averageRating, 
+        "sales": p.sales, // Use actual sales
+        "stock": p.stock, // Use actual stock
+        "isFavorite": false, // This remains a local UI placeholder for now
         "category": p.category.name,
       };
     }).toList();
@@ -192,22 +198,32 @@ class _HomePageState extends State<HomePage> {
       padding: const EdgeInsets.all(20),
       child: Row(
         children: [
-          Container(
-            width: 50,
-            height: 50,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(25),
-              color: Colors.grey[800],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(25),
-              child: SvgPicture.asset(
-                'Icons/profile.svg',
-                fit: BoxFit.cover,
-                placeholderBuilder: (context) => const Icon(
-                  Icons.person,
-                  color: Colors.white54,
-                  size: 30,
+          GestureDetector(
+            onTap: () {
+              if (_isLoggedIn) {
+                NavigationHelper.goToProfile(context);
+              } else {
+                NavigationHelper.goToLogin(context);
+              }
+            },
+            child: Container(
+              width: 50,
+              height: 50,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(25),
+                color: Colors.grey[800],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(25),
+                child: SvgPicture.asset(
+                  'Icons/profile.svg',
+                  fit: BoxFit.cover,
+                  colorFilter: const ColorFilter.mode(Colors.white54, BlendMode.srcIn),
+                  placeholderBuilder: (context) => const Icon(
+                    Icons.person,
+                    color: Colors.white54,
+                    size: 30,
+                  ),
                 ),
               ),
             ),
@@ -394,124 +410,151 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildProductCard(Product product) {
-    final dummySales = "1200 Sales";
-    final dummyRating = "4.5 Ratings";
+    // Use product average rating if available, otherwise default
+    final double averageRating = product.averageRating is num
+        ? (product.averageRating as num).toDouble() : 0.0;
+    final String formattedAverageRating = averageRating.toStringAsFixed(1);
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 20),
-      padding: const EdgeInsets.all(20),
-      height: 200,
-      decoration: BoxDecoration(
-        color: const Color(0xFF2A2A2A),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Column(
-        children: [
-          Expanded(
-            flex: 3,
-            child: Stack(
-              children: [
-                Center(
-                  child: SvgPicture.asset(
-                    product.image,
-                    width: 120,
-                    height: 120,
-                    fit: BoxFit.contain,
-                    placeholderBuilder: (context) => Container(
+    return GestureDetector(
+      onTap: () => NavigationHelper.goToDetails(context, product: _convertProductToMap(product)), // Corrected call
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 20),
+        padding: const EdgeInsets.all(20),
+        height: 200,
+        decoration: BoxDecoration(
+          color: const Color(0xFF2A2A2A),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Column(
+          children: [
+            Expanded(
+              flex: 3,
+              child: Stack(
+                children: [
+                  Center(
+                    child: SvgPicture.asset(
+                      product.image,
                       width: 120,
                       height: 120,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[700],
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Icon(
-                        Icons.image,
-                        color: Colors.white54,
-                        size: 50,
+                      fit: BoxFit.contain,
+                      colorFilter: const ColorFilter.mode(Colors.grey, BlendMode.srcIn),
+                      placeholderBuilder: (context) => Container(
+                        width: 120,
+                        height: 120,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[700],
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(
+                          Icons.image,
+                          color: Colors.white54,
+                          size: 50,
+                        ),
                       ),
                     ),
                   ),
-                ),
-                Positioned(
-                  top: 0,
-                  right: 0,
-                  child: GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        // This 'isFavorite' state is local to UI
-                        // If backend had a favorite endpoint, it would be called here
-                      });
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.black54,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: const Icon(
-                        false ? Icons.favorite : Icons.favorite_border,
-                        color: false ? Colors.red : Colors.white70,
-                        size: 20,
+                  Positioned(
+                    top: 0,
+                    right: 0,
+                    child: GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          // This 'isFavorite' state is local to UI
+                          // If backend had a favorite endpoint, it would be called here
+                        });
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.black54,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: const Icon(
+                          false ? Icons.favorite : Icons.favorite_border,
+                          color: false ? Colors.red : Colors.white70,
+                          size: 20,
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          Container(
-            padding: const EdgeInsets.all(15),
-            decoration: BoxDecoration(
-              color: Colors.black54,
-              borderRadius: BorderRadius.circular(15),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        product.name,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
+            Container(
+              padding: const EdgeInsets.all(15),
+              decoration: BoxDecoration(
+                color: Colors.black54,
+                borderRadius: BorderRadius.circular(15),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          product.name,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        "$dummySales • $dummyRating",
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Colors.white70,
+                        const SizedBox(height: 4),
+                        Text(
+                          '${product.sales} Sales \u2022 $formattedAverageRating Rating', // Display actual sales and average rating
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Colors.white70,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-                Text(
-                  '\$${product.price.toStringAsFixed(2)}',
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                  Text(
+                    '\$${product.price.toStringAsFixed(2)}',
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
+  // Helper method to convert a Product object back to a Map for navigation
+  Map<String, dynamic> _convertProductToMap(Product p) {
+    return {
+      "id": p.id,
+      "name": p.name,
+      "image": p.image,
+      "description": p.description,
+      "price": p.price,
+      "averageRating": p.averageRating,
+      "sales": p.sales,
+      "stock": p.stock,
+      "isFavorite": false, // This is not stored in Product model, keep as dummy
+      "category": p.category.name,
+    };
+  }
+
   Widget _buildBottomNavigation() {
     final List<Map<String, dynamic>> navItems = [
-      {"icon": Icons.home, "label": "HOME", "index": 0, "route": AppRoutes.home},
-      {"icon": Icons.favorite_border, "label": "WISHLIST", "index": 1, "route": null},
-      {"icon": Icons.shopping_bag_outlined, "label": "CART", "index": 2, "route": AppRoutes.cart},
-      {"icon": Icons.person_outline, "label": "LOGIN", "index": 3, "route": AppRoutes.login}
+      {"icon": Icons.home, "label": "HOME", "index": 0, "routeName": AppRoutes.homeRouteName},
+      {"icon": Icons.favorite_border, "label": "WISHLIST", "index": 1, "routeName": null}, // Wishlist functionality to be added
+      {"icon": Icons.shopping_bag_outlined, "label": "CART", "index": 2, "routeName": AppRoutes.cartRouteName},
+      {
+        "icon": _isLoggedIn ? Icons.person_outline : Icons.login,
+        "label": _isLoggedIn ? "PROFILE" : "LOGIN",
+        "index": 3,
+        "routeName": _isLoggedIn ? AppRoutes.profileRouteName : AppRoutes.loginRouteName,
+      }
     ];
 
     return Container(
@@ -531,14 +574,13 @@ class _HomePageState extends State<HomePage> {
               setState(() {
                 selectedNavIndex = item['index'];
               });
-              if (item['route'] != null) {
-                // Use goNamed for bottom navigation items
-                router.goNamed(item['route']);
-              } else if (item['index'] == 0) {
+              if (item['routeName'] != null) { // Check if routeName is provided
+                router.goNamed(item['routeName']);
+              } else if (item['index'] == 0) { // Specific handling for Home (reload data)
                 _loadData(); // Reload home data
               } else if (item['index'] == 1) { // Wishlist placeholder
                  ScaffoldMessenger.of(context).showSnackBar(
-                   const SnackBar(content: Text('Wishlist functionality coming soon!')),
+                   const SnackBar(content: Text('Wishlist functionality coming soon!'))
                  );
               }
             },

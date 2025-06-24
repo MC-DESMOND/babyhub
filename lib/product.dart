@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'routes.dart';
+import 'models/product.dart'; // Import Product model
 
 class ProductPage extends StatefulWidget {
   final List<Map<String, dynamic>> products;
@@ -21,14 +22,15 @@ class _ProductPageState extends State<ProductPage> {
     NavigationHelper.goToDetails(
       context,
       product: {
-        'id': product['id'], // Ensure product ID is passed
+        'id': product['id'],
         'name': product['name'],
-        'price': product['price'], // Pass price as is (should be int)
-        'rating': product['rating'], // Pass rating as is from map
-        'sales': product['sales'], // Pass sales as is from map
-        'stock': '48', // Default stock value, not from backend yet
-        'description': product['description'] ?? 'A sleek black joystick with neon accents and a comfortable grip for precise gaming control.', // Use description from product map
-        'image': product['image'], // Pass image from product map
+        'price': product['price'],
+        'description': product['description'],
+        'image': product['image'],
+        'averageRating': product['averageRating'],
+        'sales': product['sales'],
+        'stock': product['stock'],
+        'isFavorite': product['isFavorite'],
       },
     );
   }
@@ -117,6 +119,13 @@ class _ProductPageState extends State<ProductPage> {
   }
 
   Widget _buildProductCard(Map<String, dynamic> product) {
+    // Use product average rating if available, otherwise default
+    final double averageRating = product['averageRating'] is num
+        ? (product['averageRating'] as num).toDouble() : 0.0;
+    final String formattedAverageRating = averageRating.toStringAsFixed(1);
+
+    final int sales = product['sales'] as int; // Cast sales to int
+
     return GestureDetector(
       onTap: () => navigateToDetails(product),
       child: Container(
@@ -139,23 +148,22 @@ class _ProductPageState extends State<ProductPage> {
                     ),
                     child: Center(
                       child: SvgPicture.asset(
-                        product['image'],
+                        product['image'] ?? 'Icons/placeholder.svg',
                         width: 80,
                         height: 80,
                         fit: BoxFit.contain,
+                        colorFilter: const ColorFilter.mode(Colors.grey, BlendMode.srcIn),
                         placeholderBuilder: (context) => Container(
                           width: 80,
                           height: 80,
                           decoration: BoxDecoration(
-                            color: Colors.grey[600],
+                            color: Colors.grey[700],
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: Icon(
-                            product['name'].contains('Nintendo')
-                                ? Icons.gamepad
-                                : Icons.headphones,
+                          child: const Icon(
+                            Icons.image,
                             color: Colors.white54,
-                            size: 40,
+                            size: 50,
                           ),
                         ),
                       ),
@@ -200,39 +208,38 @@ class _ProductPageState extends State<ProductPage> {
                 color: Colors.black45,
                 borderRadius: BorderRadius.circular(15),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
                 children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          product['name'] ?? 'Product Name',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '$sales Sales \u2022 $formattedAverageRating Rating', // Display actual sales and average rating
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Colors.white70,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                   Text(
-                    product['name'],
+                    '\$${(product['price'] as int).toStringAsFixed(2)}',
                     style: const TextStyle(
-                      fontSize: 16,
+                      fontSize: 20,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    "${product['sales']} • ${product['rating']}",
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Colors.white70,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Spacer(),
-                      Text(
-                        '\$${product['price']}',
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ],
                   ),
                 ],
               ),

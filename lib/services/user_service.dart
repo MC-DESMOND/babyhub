@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/user.dart';
-import 'api_config.dart';
-import 'auth_service.dart';
+import '../services/api_config.dart';
+import '../services/auth_service.dart';
 
 class UserService {
   final AuthService _authService = AuthService();
@@ -28,7 +28,36 @@ class UserService {
     }
   }
 
-  // Example of an authenticated request (if needed later for user updates/reads)
+  Future<String?> updateUser(User user) async {
+    final token = await _authService.getToken();
+    if (token == null) {
+      print('No token found. User not authenticated for updating user.');
+      return 'Authentication required.';
+    }
+
+    final url = Uri.parse('${ApiConfig.BASE_URL}/user/update');
+    try {
+      final response = await http.put(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode(user.toJson()),
+      );
+
+      if (response.statusCode == 200) {
+        return response.body;
+      } else {
+        print('Failed to update user: ${response.statusCode} - ${response.body}');
+        return 'Failed to update user: ${response.body}';
+      }
+    } catch (e) {
+      print('Error updating user: $e');
+      return 'Error updating user: $e';
+    }
+  }
+
   Future<List<User>?> getAllUsers() async {
     final token = await _authService.getToken();
     if (token == null) {

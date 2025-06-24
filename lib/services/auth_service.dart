@@ -22,19 +22,17 @@ class AuthService {
       );
 
       if (response.statusCode == 200) {
-        print('Sign in successful: ${response.body}');
+        print('[AuthService] Sign in successful: ${response.body}');
         final Map<String, dynamic> data = jsonDecode(response.body);
-        print('Decoded JWT Response: $data'); // Debugging line to check the response
-      
         final jwtResponse = JwtResponse.fromJson(data);
         await _saveToken(jwtResponse);
         return jwtResponse;
       } else {
-        print('Failed to sign in: ${response.statusCode} - ${response.body}');
+        print('[AuthService] Failed to sign in: ${response.statusCode} - ${response.body}');
         return null;
       }
     } catch (e) {
-      print('Error during sign in: $e');
+      print('[AuthService] Error during sign in: $e');
       return null;
     }
   }
@@ -45,11 +43,14 @@ class AuthService {
     await prefs.setInt(_userIdKey, jwtResponse.id);
     await prefs.setString(_userNameKey, jwtResponse.name);
     await prefs.setString(_userEmailKey, jwtResponse.email);
+    print('[AuthService] Saved token and user info: id=${jwtResponse.id}, name=${jwtResponse.name}, email=${jwtResponse.email}');
   }
 
   Future<String?> getToken() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_tokenKey);
+    final token = prefs.getString(_tokenKey);
+    print('[AuthService] Retrieved token: ${token != null ? 'Present' : 'Null'}');
+    return token;
   }
 
   Future<User?> getCurrentUser() async {
@@ -59,9 +60,27 @@ class AuthService {
     final userEmail = prefs.getString(_userEmailKey);
 
     if (userId != null && userName != null && userEmail != null) {
+      print('[AuthService] Retrieved current user from prefs: id=$userId, name=$userName, email=$userEmail');
       return User(id: userId, name: userName, email: userEmail);
+    } else {
+      print('[AuthService] No complete user info found in prefs. userId=$userId, userName=$userName, userEmail=$userEmail');
     }
     return null;
+  }
+
+  Future<void> refreshCurrentUser() async {
+    // Re-fetch user data from SharedPreferences after an update
+    // This method is primarily for re-triggering UI updates based on local changes
+    final prefs = await SharedPreferences.getInstance();
+    final userId = prefs.getInt(_userIdKey);
+    final userName = prefs.getString(_userNameKey);
+    final userEmail = prefs.getString(_userEmailKey);
+
+    if (userId != null && userName != null && userEmail != null) {
+      print('[AuthService] Current User refreshed from local storage: $userName ($userEmail)');
+    } else {
+      print('[AuthService] Attempted to refresh user, but info is incomplete in local storage.');
+    }
   }
 
   Future<void> signOut() async {
@@ -70,6 +89,6 @@ class AuthService {
     await prefs.remove(_userIdKey);
     await prefs.remove(_userNameKey);
     await prefs.remove(_userEmailKey);
-    print('User signed out.');
+    print('[AuthService] User signed out. All local auth data cleared.');
   }
 }

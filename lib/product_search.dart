@@ -216,19 +216,27 @@ class _SearchProductPageState extends State<SearchProductPage> {
   }
 
   Widget _buildProductCard(Map<String, dynamic> product) {
+    // Use product average rating if available, otherwise default
+    final double averageRating = product['averageRating'] is num
+        ? (product['averageRating'] as num).toDouble() : 0.0;
+    final String formattedAverageRating = averageRating.toStringAsFixed(1);
+
+    final int sales = product['sales'] as int; // Cast sales to int
+
     return GestureDetector(
       onTap: () {
         NavigationHelper.goToDetails(
           context,
           product: {
-            'id': product['id'], // Ensure product ID is passed
+            'id': product['id'],
             'name': product['name'],
-            'price': product['price'], // Pass price as is (should be int)
-            'rating': product['rating'],
-            'sales': product['sales'],
-            'stock': '48',
-            'description': product['description'] ?? 'A sleek black joystick with neon accents and a comfortable grip for precise gaming control.',
+            'price': product['price'],
+            'description': product['description'],
             'image': product['image'],
+            'averageRating': averageRating,
+            'sales': sales,
+            'stock': product['stock'],
+            'isFavorite': product['isFavorite'],
           },
         );
       },
@@ -250,10 +258,10 @@ class _SearchProductPageState extends State<SearchProductPage> {
                 borderRadius: BorderRadius.circular(15),
               ),
               child: SvgPicture.asset(
-                product['image'],
+                product['image'] ?? 'Icons/placeholder.svg',
                 width: 40,
                 height: 30,
-                color: Colors.grey[600],
+                colorFilter: const ColorFilter.mode(Colors.grey, BlendMode.srcIn),
                 placeholderBuilder: (context) => const Icon(
                   Icons.image,
                   color: Colors.white54,
@@ -268,7 +276,7 @@ class _SearchProductPageState extends State<SearchProductPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    product['name'],
+                    product['name'] ?? 'Product Name',
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -277,7 +285,7 @@ class _SearchProductPageState extends State<SearchProductPage> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    product['category'],
+                    product['category'] ?? 'Uncategorized',
                     style: const TextStyle(
                       fontSize: 14,
                       color: Color(0xFF00C896),
@@ -285,7 +293,7 @@ class _SearchProductPageState extends State<SearchProductPage> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    "${product['sales']} • ${product['rating']}",
+                    '$sales Sales \u2022 $formattedAverageRating Rating',
                     style: const TextStyle(
                       fontSize: 12,
                       color: Colors.white70,
@@ -312,7 +320,7 @@ class _SearchProductPageState extends State<SearchProductPage> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  '\$${product['price']}',
+                  '\$${(product['price'] as int).toStringAsFixed(2)}',
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
