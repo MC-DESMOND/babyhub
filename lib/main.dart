@@ -9,7 +9,7 @@ import 'models/product.dart';
 import 'package:go_router/go_router.dart'; // Import GoRouter
 
 void main() {
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -153,26 +153,26 @@ class _HomePageState extends State<HomePage> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.error_outline, color: Colors.red, size: 48),
-                          SizedBox(height: 16),
+                          const Icon(Icons.error_outline, color: Colors.red, size: 48),
+                          const SizedBox(height: 16),
                           Text(
                             _errorMessage,
                             textAlign: TextAlign.center,
-                            style: TextStyle(color: Colors.white70, fontSize: 16),
+                            style: const TextStyle(color: Colors.white70, fontSize: 16),
                           ),
-                          SizedBox(height: 24),
+                          const SizedBox(height: 24),
                           ElevatedButton(
                             onPressed: _loadData,
-                            child: const Text('Retry'),
                             style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00C896)),
+                            child: const Text('Retry'),
                           ),
-                          SizedBox(height: 16),
+                          const SizedBox(height: 16),
                           ElevatedButton(
                             onPressed: () {
                               NavigationHelper.goToLogin(context);
                             },
-                            child: const Text('Go to Login'),
                             style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
+                            child: const Text('Go to Login'),
                           ),
                         ],
                       ),

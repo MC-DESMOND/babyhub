@@ -5,17 +5,17 @@ import '../providers/user_provider.dart';
 
 // Local GetxController for password-specific state management
 class UpdatePasswordProvider extends GetxController {
-  RxString _currentPassword = ''.obs;
-  RxString _newPassword = ''.obs;
-  RxString _confirmPassword = ''.obs;
-  RxBool _isLoading = false.obs;
-  RxBool _isCurrentPasswordVisible = false.obs;
-  RxBool _isNewPasswordVisible = false.obs;
-  RxBool _isConfirmPasswordVisible = false.obs;
-  RxBool _hasMinLength = false.obs;
-  RxBool _hasNumber = false.obs;
-  RxBool _hasLetters = false.obs;
-  RxnString _errorMessage = RxnString();
+  final RxString _currentPassword = ''.obs;
+  final RxString _newPassword = ''.obs;
+  final RxString _confirmPassword = ''.obs;
+  final RxBool _isLoading = false.obs;
+  final RxBool _isCurrentPasswordVisible = false.obs;
+  final RxBool _isNewPasswordVisible = false.obs;
+  final RxBool _isConfirmPasswordVisible = false.obs;
+  final RxBool _hasMinLength = false.obs;
+  final RxBool _hasNumber = false.obs;
+  final RxBool _hasLetters = false.obs;
+  final RxnString _errorMessage = RxnString();
 
   String get currentPassword => _currentPassword.value;
   String get newPassword => _newPassword.value;
@@ -137,7 +137,7 @@ class UpdatePasswordScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return GetBuilder<UpdatePasswordProvider>( // Use GetBuilder for the screen
       init: UpdatePasswordProvider(), // Initialize the controller
-      builder: (provider) => _UpdatePasswordScreenContent(),
+      builder: (provider) => const _UpdatePasswordScreenContent(),
     );
   }
 }

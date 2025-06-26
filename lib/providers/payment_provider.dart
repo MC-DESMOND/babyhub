@@ -4,7 +4,7 @@ import '../models/payment_method.dart';
 
 // Payment Provider for State Management
 class PaymentProvider extends GetxController {
-  RxList<PaymentMethod> _paymentMethods = <PaymentMethod>[
+  final RxList<PaymentMethod> _paymentMethods = <PaymentMethod>[
     PaymentMethod(
       id: '1',
       type: 'Visa',
@@ -26,8 +26,8 @@ class PaymentProvider extends GetxController {
     ),
   ].obs;
 
-  RxBool _isLoading = false.obs;
-  RxBool _isAddingNew = false.obs;
+  final RxBool _isLoading = false.obs;
+  final RxBool _isAddingNew = false.obs;
 
   // Getters
   List<PaymentMethod> get paymentMethods => _paymentMethods.toList();

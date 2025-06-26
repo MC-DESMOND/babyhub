@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'routes.dart';
-import 'models/product.dart'; // Import Product model
+// Import Product model
 
 class ProductPage extends StatefulWidget {
   final List<Map<String, dynamic>> products;

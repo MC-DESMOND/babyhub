@@ -4,11 +4,11 @@ import 'package:get/get.dart';
 // Delivery Information Data Model
 // Delivery Provider for State Management
 class DeliveryProvider extends GetxController {
-  RxList<String> _addresses = <String>[
+  final RxList<String> _addresses = <String>[
     '537 Paper Street, Bradford, 19806',
     '123 Main Rd, Apt 4B, Springfield, 98765',
   ].obs;
-  RxBool _isLoading = false.obs;
+  final RxBool _isLoading = false.obs;
 
   // Getters
   List<String> get addresses => _addresses.toList();

@@ -5,9 +5,9 @@ import '../services/auth_service.dart';
 import '../services/user_service.dart';
 
 class UserProvider extends GetxController {
-  Rxn<User> _user = Rxn<User>();
-  RxBool _isLoading = false.obs;
-  RxnString _errorMessage = RxnString();
+  final Rxn<User> _user = Rxn<User>();
+  final RxBool _isLoading = false.obs;
+  final RxnString _errorMessage = RxnString();
 
   final AuthService _authService = AuthService();
   final UserService _userService = UserService();

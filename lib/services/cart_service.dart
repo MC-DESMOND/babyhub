@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/cart.dart';
-import '../models/cart_item.dart'; // Import CartItem for consistency
+// Import CartItem for consistency
 import 'api_config.dart';
 import 'auth_service.dart';
 

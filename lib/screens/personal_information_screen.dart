@@ -260,8 +260,7 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
               onPrimary: Colors.white,
               surface: Color(0xFF2D2D2D),
               onSurface: Colors.white,
-            ),
-            dialogBackgroundColor: const Color(0xFF1A1A1A),
+            ), dialogTheme: DialogThemeData(backgroundColor: const Color(0xFF1A1A1A)),
           ),
           child: child!,
         );
