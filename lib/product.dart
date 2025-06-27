@@ -208,16 +208,13 @@ class _ProductPageState extends State<ProductPage> {
                 color: Colors.black45,
                 borderRadius: BorderRadius.circular(15),
               ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
+              child:  Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           product['name'] ?? 'Product Name',
                           style: const TextStyle(
-                            fontSize: 18,
+                            fontSize: 16,
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
                           ),
@@ -226,20 +223,26 @@ class _ProductPageState extends State<ProductPage> {
                         Text(
                           '$sales Sales \u2022 $formattedAverageRating Rating', // Display actual sales and average rating
                           style: const TextStyle(
-                            fontSize: 14,
+                            fontSize: 12,
                             color: Colors.white70,
                           ),
                         ),
-                      ],
-                    ),
-                  ),
+                    SizedBox(height: 8),
+
+                  // Price
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Spacer(),
                   Text(
                     '\$${(product['price'] as int).toStringAsFixed(2)}',
                     style: const TextStyle(
-                      fontSize: 20,
+                      fontSize: 18,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                     ),
+                                          ),
+                    ],
                   ),
                 ],
               ),

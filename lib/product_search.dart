@@ -259,8 +259,6 @@ class _SearchProductPageState extends State<SearchProductPage> {
               ),
               child: SvgPicture.asset(
                 product['image'] ?? 'Icons/placeholder.svg',
-                width: 40,
-                height: 30,
                 colorFilter: const ColorFilter.mode(Colors.grey, BlendMode.srcIn),
                 placeholderBuilder: (context) => const Icon(
                   Icons.image,
