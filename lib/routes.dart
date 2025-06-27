@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
 import 'main.dart';
 import 'product_search.dart';
 import 'product.dart';
 import 'details.dart';
+import 'providers/user_provider.dart';
 import 'screens/login_screen.dart';
 import 'screens/signup_screen.dart';
 import 'screens/cart_screen.dart';
@@ -111,7 +113,11 @@ final GoRouter router = GoRouter(
     GoRoute(
       path: AppRoutes.profilePath,
       name: AppRoutes.profileRouteName,
-      builder: (context, state) => const ProfileScreen(),
+      // Get.put(UserProvider())
+      builder: (context, state) {
+        Get.put(UserProvider());
+        return const ProfileScreen();
+        },
     ),
   ],
 
