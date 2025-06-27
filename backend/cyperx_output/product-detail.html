@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Details - BabyShop Hub</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>BabyShop Hub</h1>
+        <nav>
+            <ul>
+                <li><a href="index.html">Home</a></li>
+                <li><a href="products.html">Products</a></li>
+                <li><a href="categories.html">Categories</a></li>
+                <li><a href="cart.html">Cart</a></li>
+                <li id="auth-links">
+                    <a href="login.html" id="login-link">Login</a>
+                    <a href="register.html" id="register-link">Register</a>
+                </li>
+                <li id="user-greeting" style="display:none;">
+                    Welcome, <span id="user-name"></span>!
+                    <button id="logout-btn">Logout</button>
+                </li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <h2 id="product-name"></h2>
+        <div id="product-detail-container">
+            <img id="product-image" src="" alt="Product Image">
+            <p><strong>Description:</strong> <span id="product-description"></span></p>
+            <p><strong>Price:</strong> $<span id="product-price"></span></p>
+            <p><strong>Category:</strong> <span id="product-category"></span></p>
+            <p><strong>Average Rating:</strong> <span id="product-avg-rating"></span> / 5</p>
+            <p><strong>Stock:</strong> <span id="product-stock"></span></p>
+            <p><strong>Sales:</strong> <span id="product-sales"></span></p>
+            
+            <div class="add-to-cart">
+                <input type="number" id="quantity" value="1" min="1" style="width: 60px;">
+                <button id="add-to-cart-btn">Add to Cart</button>
+                <p id="add-cart-message" class="message"></p>
+            </div>
+
+            <h3>Reviews (<span id="reviews-count">0</span>)</h3>
+            <div id="reviews-list"></div>
+
+            <h3>Submit a Review</h3>
+            <form id="review-form">
+                <div class="form-group">
+                    <label for="review-rating">Rating:</label>
+                    <select id="review-rating" name="rating" required>
+                        <option value="1">1 Star</option>
+                        <option value="2">2 Stars</option>
+                        <option value="3">3 Stars</option>
+                        <option value="4">4 Stars</option>
+                        <option value="5">5 Stars</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="review-text">Your Review:</label>
+                    <textarea id="review-text" name="text" rows="4" required></textarea>
+                </div>
+                <button type="submit" id="submit-review-btn">Submit Review</button>
+                <p id="review-message" class="message"></p>
+            </form>
+
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2023 BabyShop Hub. All rights reserved.</p>
+    </footer>
+
+    <script src="script.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            updateAuthLinks();
+            const productId = new URLSearchParams(window.location.search).get('id');
+            if (!productId) {
+                document.getElementById('product-detail-container').innerHTML = '<p>Product ID not found.</p>';
+                return;
+            }
+
+            await loadProductDetails(productId);
+
+            const addCartBtn = document.getElementById('add-to-cart-btn');
+            const quantityInput = document.getElementById('quantity');
+            const addCartMessage = document.getElementById('add-cart-message');
+            
+            if (addCartBtn) {
+                addCartBtn.addEventListener('click', async () => {
+                    const quantity = parseInt(quantityInput.value);
+                    const token = localStorage.getItem('jwtToken');
+                    const userId = localStorage.getItem('userId');
+
+                    if (!token || !userId) {
+                        addCartMessage.textContent = 'Please login to add items to cart.';
+                        addCartMessage.style.color = 'red';
+                        return;
+                    }
+                    
+                    if (quantity <= 0) {
+                        addCartMessage.textContent = 'Quantity must be at least 1.';
+                        addCartMessage.style.color = 'red';
+                        return;
+                    }
+
+                    const response = await addProductToCart(userId, productId, quantity, token);
+                    if (response.success) {
+                        addCartMessage.textContent = `Product added to cart: ${response.message}`;
+                        addCartMessage.style.color = 'green';
+                    } else {
+                        addCartMessage.textContent = `Failed to add to cart: ${response.message}`;
+                        addCartMessage.style.color = 'red';
+                    }
+                });
+            }
+
+            const reviewForm = document.getElementById('review-form');
+            const submitReviewBtn = document.getElementById('submit-review-btn');
+            const reviewMessage = document.getElementById('review-message');
+
+            if (reviewForm) {
+                reviewForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const rating = parseInt(document.getElementById('review-rating').value);
+                    const text = document.getElementById('review-text').value;
+
+                    const token = localStorage.getItem('jwtToken');
+                    const userId = localStorage.getItem('userId');
+
+                    if (!token || !userId) {
+                        reviewMessage.textContent = 'Please login to submit a review.';
+                        reviewMessage.style.color = 'red';
+                        return;
+                    }
+
+                    const reviewData = {
+                        productId: parseInt(productId),
+                        userId: parseInt(userId),
+                        rating: rating,
+                        text: text
+                    };
+
+                    const response = await createReview(reviewData, token);
+                    if (response.success) {
+                        reviewMessage.textContent = 'Review submitted successfully!';
+                        reviewMessage.style.color = 'green';
+                        reviewForm.reset();
+                        await loadProductDetails(productId); // Reload details to show new review
+                    } else {
+                        reviewMessage.textContent = `Failed to submit review: ${response.message}`;
+                        reviewMessage.style.color = 'red';
+                    }
+                });
+            }
+        });
+
+        async function loadProductDetails(productId) {
+            const productDetailContainer = document.getElementById('product-detail-container');
+            const token = localStorage.getItem('jwtToken');
+            const product = await getProductById(productId, token);
+
+            if (product.success) {
+                const p = product.data;
+                document.getElementById('product-name').textContent = p.name;
+                document.getElementById('product-image').src = `http://localhost:8080/${p.image}`;
+                document.getElementById('product-image').alt = p.name;
+                document.getElementById('product-description').textContent = p.description;
+                document.getElementById('product-price').textContent = p.price;
+                document.getElementById('product-category').textContent = p.category ? p.category.name : 'N/A';
+                document.getElementById('product-avg-rating').textContent = p.averageRating ? p.averageRating.toFixed(1) : '0.0';
+                document.getElementById('product-stock').textContent = p.stock;
+                document.getElementById('product-sales').textContent = p.sales;
+
+                const reviewsList = document.getElementById('reviews-list');
+                reviewsList.innerHTML = '';
+                document.getElementById('reviews-count').textContent = p.reviews ? p.reviews.length : 0;
+
+                if (p.reviews && p.reviews.length > 0) {
+                    p.reviews.forEach(review => {
+                        const reviewDiv = document.createElement('div');
+                        reviewDiv.classList.add('review-item');
+                        reviewDiv.innerHTML = `
+                            <p><strong>${review.reviewerName}</strong> - ${review.rating} Stars</p>
+                            <p>${review.text}</p>
+                            <small>${new Date(review.reviewDate).toLocaleDateString()}</small>
+                        `;
+                        reviewsList.appendChild(reviewDiv);
+                    });
+                } else {
+                    reviewsList.innerHTML = '<p>No reviews yet. Be the first to review this product!</p>';
+                }
+
+            } else {
+                productDetailContainer.innerHTML = `<p>Error loading product: ${product.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>
